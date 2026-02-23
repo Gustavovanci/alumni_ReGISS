@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
 import { Briefcase, Building, Zap, Users, ArrowRight, CheckCircle2, Target, MessageSquare, Award, ShieldCheck, Key, Lock, Loader2, X } from 'lucide-react';
@@ -25,6 +25,25 @@ export const ForCompanies = () => {
     const [password, setPassword] = useState('');
     const [inviteStep, setInviteStep] = useState<'validate' | 'register' | 'success'>('validate');
     const [isValidating, setIsValidating] = useState(false);
+
+    // UX: Forçar scroll para o topo sempre que entrar na página da Empresa
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
+    // UX: Fechamento rápido do modal pelo ESC do teclado
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && isModalOpen) {
+                setIsModalOpen(false);
+                setSubmitted(false);
+                setFormData({ company_name: '', contact_email: '', contact_name: '', hiring_needs: '' });
+                setInviteStep('validate');
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isModalOpen]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
