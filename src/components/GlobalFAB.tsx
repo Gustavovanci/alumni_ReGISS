@@ -216,17 +216,7 @@ export const GlobalFAB = () => {
                                         <textarea value={newJob.description} onChange={e => setNewJob({ ...newJob, description: e.target.value })} className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 text-sm text-white resize-none h-24 outline-none focus:border-[#D5205D] shadow-inner" placeholder="Descrição resumida e requisitos..." required />
                                     </div>
 
-                                    {(role === 'admin' || role === 'company') && (
-                                        <div className="bg-gradient-to-r from-amber-500/10 to-transparent p-3 rounded-2xl border border-amber-500/30 flex items-start gap-3 cursor-pointer" onClick={() => setNewJob({ ...newJob, isPremium: !newJob.isPremium })}>
-                                            <div className={`w-5 h-5 rounded mt-0.5 flex items-center justify-center border transition-all ${newJob.isPremium ? 'bg-amber-500 border-amber-500' : 'bg-[#142239] border-white/20'}`}>
-                                                {newJob.isPremium && <Check size={14} className="text-white" />}
-                                            </div>
-                                            <div>
-                                                <h4 className="text-amber-400 font-bold text-xs tracking-wide">Vaga Destaque (Premium)</h4>
-                                                <p className="text-amber-500/70 text-[10px] mt-0.5">Recurso corporativo para visualização prioritária.</p>
-                                            </div>
-                                        </div>
-                                    )}
+
 
                                     <button type="submit" disabled={isSubmitting} className="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3.5 rounded-2xl shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50">
                                         {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : 'Divulgar Oportunidade'}

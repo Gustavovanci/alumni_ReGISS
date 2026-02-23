@@ -212,18 +212,7 @@ export const Jobs = () => {
               <textarea value={newJob.description} onChange={e => setNewJob({ ...newJob, description: e.target.value })} className="w-full bg-[#142239] border border-white/10 rounded-xl p-4 text-white mt-1 h-24 resize-none outline-none focus:border-[#D5205D] transition-colors shadow-inner" placeholder="Detalhes da vaga..." />
             </div>
 
-            {/* VAGA PREMIUM (SIMULAÇÃO DE MONETIZAÇÃO - APENAS ADMIN E EMPRESAS) */}
-            {(currentUserRole === 'admin' || currentUserRole === 'company') && (
-              <div className="mb-6 bg-gradient-to-r from-amber-500/10 to-transparent p-4 rounded-xl border border-amber-500/30 flex items-start gap-3 cursor-pointer" onClick={() => setNewJob({ ...newJob, isPremium: !newJob.isPremium })}>
-                <div className={`w-5 h-5 rounded mt-0.5 flex flex-shrink-0 items-center justify-center border transition-all ${newJob.isPremium ? 'bg-amber-500 border-amber-500' : 'bg-[#142239] border-white/20'}`}>
-                  {newJob.isPremium && <Check size={14} className="text-white" />}
-                </div>
-                <div>
-                  <h4 className="text-amber-400 font-bold text-sm tracking-wide">Impulsionar Vaga (Premium)</h4>
-                  <p className="text-amber-500/70 text-xs">A vaga ficará fixada no topo com destaque Dourado. (Recurso exclusivo corporativo)</p>
-                </div>
-              </div>
-            )}
+
 
             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
               <p className="text-xs text-slate-400 flex items-center gap-1"><Clock size={14} /> Ficará visível por 15 dias.</p>
