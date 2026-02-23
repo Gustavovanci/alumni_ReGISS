@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Network, Briefcase, TrendingUp, ShieldCheck, ArrowRight, Users, LineChart, Building } from 'lucide-react';
+import { Network, Briefcase, TrendingUp, ShieldCheck, ArrowRight, Users, LineChart, Building, Target, Activity } from 'lucide-react';
 
 export const LandingAlumni = () => {
     const navigate = useNavigate();
@@ -66,24 +66,41 @@ export const LandingAlumni = () => {
 
                     {/* Hero Visuals / Mockup abstrato focado em Gestão */}
                     <div className="relative w-full h-[500px] flex items-center justify-center">
-                        {/* Círculo Central Escuro com a Logo */}
-                        <div className="absolute w-[320px] h-[320px] sm:w-[380px] sm:h-[380px] bg-[#142239]/80 rounded-full border border-white/5 backdrop-blur-xl shadow-2xl flex items-center justify-center drop-shadow-[0_0_25px_rgba(213,32,93,0.15)] z-20">
-                            <img src="/ReGISS-transparent.png" alt="ReGISS Oficial" className="w-[80%] max-w-[280px] object-contain drop-shadow-2xl" />
+                        {/* Círculo Central Escuro */}
+                        <div className="absolute w-[320px] h-[320px] sm:w-[380px] sm:h-[380px] bg-[#142239]/80 rounded-full border border-white/5 backdrop-blur-xl shadow-2xl flex items-center justify-center">
+                            <LineChart className="w-32 h-32 text-[#D5205D]/20 animate-pulse" />
                         </div>
 
                         {/* Orbiting Elements */}
                         <div className="absolute w-full h-full animate-[spin_40s_linear_infinite] pointer-events-none z-10">
+                            {/* Building */}
                             <div className="absolute top-[10%] left-[20%] w-16 h-16 bg-[#15335E] rounded-2xl border border-blue-500/30 shadow-lg flex items-center justify-center -rotate-[40deg]">
                                 <Building className="text-blue-400 w-8 h-8" />
                             </div>
+
+                            {/* Network */}
                             <div className="absolute bottom-[20%] right-[10%] w-20 h-20 bg-gradient-to-br from-[#D5205D]/20 to-transparent rounded-full border border-[#D5205D]/40 backdrop-blur-md flex items-center justify-center -rotate-[20deg]">
                                 <Network className="text-[#D5205D] w-10 h-10" />
                             </div>
+
+                            {/* TrendingUp (Crescimento) */}
                             <div className="absolute top-[30%] right-[15%] w-14 h-14 bg-emerald-500/10 rounded-xl border border-emerald-500/30 backdrop-blur-md flex items-center justify-center rotate-[15deg]">
                                 <TrendingUp className="text-emerald-400 w-7 h-7" />
                             </div>
+
+                            {/* Target (Estratégia) */}
                             <div className="absolute bottom-[30%] left-[15%] w-14 h-14 bg-amber-500/10 rounded-xl border border-amber-500/30 backdrop-blur-md flex items-center justify-center rotate-[15deg]">
-                                <LineChart className="text-amber-400 w-7 h-7" />
+                                <Target className="text-amber-400 w-7 h-7" />
+                            </div>
+
+                            {/* Activity (Análise em Saúde) */}
+                            <div className="absolute top-[60%] left-[5%] w-12 h-12 bg-purple-500/10 rounded-full border border-purple-500/30 backdrop-blur-md flex items-center justify-center rotate-[45deg]">
+                                <Activity className="text-purple-400 w-6 h-6" />
+                            </div>
+
+                            {/* Users (Gestão de Pessoas) */}
+                            <div className="absolute top-[5%] right-[40%] w-16 h-16 bg-cyan-500/10 rounded-2xl border border-cyan-500/30 backdrop-blur-md flex items-center justify-center -rotate-[10deg]">
+                                <Users className="text-cyan-400 w-8 h-8" />
                             </div>
                         </div>
                     </div>
