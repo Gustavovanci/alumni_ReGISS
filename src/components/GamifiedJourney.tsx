@@ -7,21 +7,28 @@ interface JourneyItem {
 
 export const GamifiedJourney = ({ items, entryYear, profession }: { items: JourneyItem[], entryYear: number, profession: string }) => {
 
-   // 1. Inserir o Marco ReGISS na linha do tempo
-   const regissMilestone = {
-      id: 'regiss-start',
-      title: `Início na Residência (${profession})`,
-      organization: 'HCFMUSP - ReGISS',
-      type: 'regiss',
-      start_date: `${entryYear}-03-01`, // Data simbólica de início
-      end_date: '',
-      rating: 5,
-      isMilestone: true
-   };
+   // 1. Inserir o Marco ReGISS na linha do tempo, caso possua Ano de Ingresso
+   const timelineItems = items ? [...items] : [];
+
+   if (entryYear) {
+      const regissMilestone = {
+         id: 'regiss-start',
+         title: `Início na Residência (${profession})`,
+         organization: 'HCFMUSP - ReGISS',
+         type: 'regiss',
+         start_date: `${entryYear}-03-01`, // Data simbólica de início
+         end_date: '',
+         rating: 5,
+         isMilestone: true
+      };
+      timelineItems.push(regissMilestone);
+   }
 
    // 2. Mesclar e Ordenar (Do mais recente para o mais antigo)
-   const timeline = [...items, regissMilestone].sort((a, b) => {
-      return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
+   const timeline = timelineItems.sort((a, b) => {
+      const dateA = a.start_date ? new Date(a.start_date).getTime() : 0;
+      const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
+      return dateB - dateA;
    });
 
    if (items.length === 0 && !entryYear) return <p className="text-slate-500 italic p-4 text-center">Jornada ainda não iniciada.</p>;

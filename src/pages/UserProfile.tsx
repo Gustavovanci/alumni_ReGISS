@@ -109,7 +109,7 @@ export const UserProfile = () => {
 
         {/* BOTÕES DE AÇÃO */}
         <div className="relative z-10 flex flex-col sm:flex-row gap-3 mt-8 pt-8 border-t border-white/5">
-          {profile.whatsapp_authorized && profile.whatsapp && (
+          {profile.whatsapp && profile.whatsapp_authorized !== false && (
             <button
               onClick={openWhatsApp}
               className="flex-1 bg-[#25D366] hover:bg-[#20bd5a] text-white px-6 py-3 rounded-xl font-bold flex items-center justify-center gap-2 shadow-lg transition-all"

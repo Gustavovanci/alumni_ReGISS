@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { supabase } from './lib/supabase';
@@ -54,18 +54,27 @@ const PageTransitionLoader = () => (
 import { Auth } from './pages/Auth';
 import { LandingAlumni } from './pages/LandingAlumni';
 import { ForCompanies } from './pages/ForCompanies';
-import { Onboarding } from './pages/Onboarding';
-import { Coordination } from './pages/Coordination';
-import { Feed } from './pages/Feed';
-import { Network } from './pages/Network';
-import { MyJourney } from './pages/MyJourney';
-import { Jobs } from './pages/Jobs';
-import { Events } from './pages/Events';
-import { Insights } from './pages/Insights';
-import { UserProfile } from './pages/UserProfile';
-import { Notifications } from './pages/Notifications';
-import { Admin } from './pages/Admin';
-import { CompanyDashboard } from './pages/CompanyDashboard';
+
+// Internas (Páginas Pesadas carregadas sob demanda)
+const Onboarding = lazy(() => import('./pages/Onboarding').then(m => ({ default: m.Onboarding })));
+const Coordination = lazy(() => import('./pages/Coordination').then(m => ({ default: m.Coordination })));
+const Feed = lazy(() => import('./pages/Feed').then(m => ({ default: m.Feed })));
+const Network = lazy(() => import('./pages/Network').then(m => ({ default: m.Network })));
+const MyJourney = lazy(() => import('./pages/MyJourney').then(m => ({ default: m.MyJourney })));
+const Jobs = lazy(() => import('./pages/Jobs').then(m => ({ default: m.Jobs })));
+const Events = lazy(() => import('./pages/Events').then(m => ({ default: m.Events })));
+const Insights = lazy(() => import('./pages/Insights').then(m => ({ default: m.Insights })));
+const UserProfile = lazy(() => import('./pages/UserProfile').then(m => ({ default: m.UserProfile })));
+const Notifications = lazy(() => import('./pages/Notifications').then(m => ({ default: m.Notifications })));
+const Admin = lazy(() => import('./pages/Admin').then(m => ({ default: m.Admin })));
+const CompanyDashboard = lazy(() => import('./pages/CompanyDashboard').then(m => ({ default: m.CompanyDashboard })));
+
+// Loading Secundário Discreto
+const GentleLoader = () => (
+  <div className="h-screen w-full flex items-center justify-center bg-transparent">
+    <Loader2 className="w-8 h-8 text-[#D5205D] animate-spin opacity-50" />
+  </div>
+);
 
 // Layout do "Organismo Social" (Com Menu Lateral)
 const SocialLayout = ({ children }: { children: React.ReactNode }) => (
@@ -74,7 +83,9 @@ const SocialLayout = ({ children }: { children: React.ReactNode }) => (
       <PresenceTracker />
       <Sidebar />
       <div className="pl-16 md:pl-20 min-h-screen relative">
-        {children}
+        <Suspense fallback={<GentleLoader />}>
+          {children}
+        </Suspense>
       </div>
       <GlobalFAB />
     </div>
@@ -86,7 +97,9 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => (
   <ProtectedRoute>
     <div className="min-h-screen bg-[#0B1320] text-slate-100 font-sans selection:bg-[#D5205D]/30">
       <PresenceTracker />
-      {children}
+      <Suspense fallback={<GentleLoader />}>
+        {children}
+      </Suspense>
     </div>
   </ProtectedRoute>
 );
@@ -103,7 +116,7 @@ function App() {
           <Route path="/para-empresas" element={<ForCompanies />} />
 
           {/* ONBOARDING */}
-          <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+          <Route path="/onboarding" element={<ProtectedRoute><Suspense fallback={<PageTransitionLoader />}><Onboarding /></Suspense></ProtectedRoute>} />
 
           {/* O ORGANISMO SOCIAL (Alunos e Coordenação) */}
           <Route path="/feed" element={<SocialLayout><Feed /></SocialLayout>} />
@@ -120,7 +133,7 @@ function App() {
           <Route path="/admin" element={<AdminLayout><Admin /></AdminLayout>} />
 
           {/* PLATAFORMA B2B CORPORATIVA (Visão da Empresa) */}
-          <Route path="/company" element={<ProtectedRoute><CompanyDashboard /></ProtectedRoute>} />
+          <Route path="/company" element={<ProtectedRoute><Suspense fallback={<PageTransitionLoader />}><CompanyDashboard /></Suspense></ProtectedRoute>} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
