@@ -267,14 +267,17 @@ export const Jobs = () => {
                       </div>
                     )}
 
-                    <div className="flex flex-col md:flex-row justify-between items-start mt-2 gap-6 relative z-10">
-                      <div className="flex gap-4">
+                    <div className="flex flex-col md:flex-row justify-between items-start mt-2 gap-6 relative z-10 w-full">
+                      <div className="flex gap-4 w-full">
                         <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border shadow-inner ${isPremium ? 'bg-amber-500/10 text-amber-500 border-amber-500/30' : 'bg-[#142239] text-[#D5205D] border-white/5'}`}>
-                          <Briefcase size={28} />
+                          <Building size={28} />
                         </div>
-                        <div>
-                          <h3 className={`font-bold text-xl leading-tight ${isPremium ? 'text-amber-50' : 'text-white'}`}>{displayContent}</h3>
-                          <p className="text-sm text-slate-400 mt-2 flex items-center gap-2">
+                        <div className="flex-1 w-full">
+                          <h3 className={`font-bold text-xl leading-tight ${isPremium ? 'text-amber-50' : 'text-white'}`}>{job.title}</h3>
+                          <div className={`mt-3 text-sm leading-relaxed whitespace-pre-wrap ${isPremium ? 'text-amber-100/90' : 'text-slate-300'}`}>
+                            {displayContent}
+                          </div>
+                          <p className="text-sm text-slate-400 mt-4 flex items-center gap-2">
                             Postado por <span className="text-white font-medium">{profile.full_name || 'Usuário'}</span>
                             <span className={`text-[10px] px-2 py-0.5 rounded uppercase font-bold ${status.color}`}>{status.label}</span>
                           </p>
@@ -300,7 +303,7 @@ export const Jobs = () => {
                     </div>
 
                     <div className={`mt-6 pt-5 flex gap-6 text-xs font-bold uppercase tracking-wider relative z-10 ${isPremium ? 'border-t border-amber-500/20 text-amber-500/70' : 'border-t border-white/5 text-slate-400'}`}>
-                      <span className="flex items-center gap-1.5"><MapPin size={14} /> {job.link_url ? 'Vaga Externa Remota' : 'Recrutamento Interno (Fit Cultural)'}</span>
+                      <span className="flex items-center gap-1.5"><MapPin size={14} /> {job.link_url ? 'Candidatura Externa' : 'Recrutamento Interno (Fit Cultural)'}</span>
                       <span className="flex items-center gap-1.5"><Calendar size={14} /> Postado em {new Date(job.created_at).toLocaleDateString()}</span>
                     </div>
                   </div>

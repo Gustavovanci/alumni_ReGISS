@@ -64,7 +64,7 @@ export const Sidebar = () => {
               <item.icon size={20} className={`transition-transform ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
               <span className="sr-only">{item.label}</span>
 
-              <span className="absolute left-16 bg-[#15335E] border border-white/10 px-2 py-1 rounded text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl">
+              <span className="hidden md:block absolute left-16 bg-[#15335E] border border-white/10 px-2 py-1 rounded text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl">
                 {item.label}
               </span>
             </button>
@@ -82,7 +82,7 @@ export const Sidebar = () => {
             <Megaphone size={20} className={`transition-transform ${isActive('/coordination') ? 'scale-110' : 'group-hover:scale-110'}`} />
             <span className="sr-only">Área Técnica</span>
 
-            <span className="absolute left-16 bg-[#15335E] border border-amber-500/30 px-2 py-1 rounded text-[10px] font-bold text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl">
+            <span className="hidden md:block absolute left-16 bg-[#15335E] border border-amber-500/30 px-2 py-1 rounded text-[10px] font-bold text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-xl">
               Área Técnica
             </span>
           </button>

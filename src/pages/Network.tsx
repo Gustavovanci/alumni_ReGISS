@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Search, Briefcase, MapPin, User } from 'lucide-react';
+import { Search, Briefcase, MapPin, User, Loader2 } from 'lucide-react';
 import { getRegissStatus } from '../utils/regissLogic';
 
 interface Profile {
@@ -107,7 +107,7 @@ export const Network = () => {
 
         {/* GRID DE RESULTADOS */}
         {loading ? (
-          <div className="text-center py-20 text-slate-500">Carregando a rede...</div>
+          <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 text-[#D5205D] animate-spin" /></div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProfiles.map(profile => {

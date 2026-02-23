@@ -1,5 +1,5 @@
 import React, { useEffect, Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { supabase } from './lib/supabase';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -83,14 +83,14 @@ const GentleLoader = () => (
 );
 
 // Layout do "Organismo Social" (Com Menu Lateral)
-const SocialLayout = ({ children }: { children: React.ReactNode }) => (
+const SocialLayout = () => (
   <ProtectedRoute>
     <div className="min-h-screen bg-[#142239] text-slate-100 font-sans selection:bg-[#D5205D]/30">
       <PresenceTracker />
       <Sidebar />
       <div className="pl-16 md:pl-20 min-h-screen relative">
         <Suspense fallback={<GentleLoader />}>
-          {children}
+          <Outlet />
         </Suspense>
       </div>
       <GlobalFAB />
@@ -99,12 +99,12 @@ const SocialLayout = ({ children }: { children: React.ReactNode }) => (
 );
 
 // Layout do Admin (Sem menu social, visão total focada em negócio)
-const AdminLayout = ({ children }: { children: React.ReactNode }) => (
+const AdminLayout = () => (
   <ProtectedRoute>
     <div className="min-h-screen bg-[#0B1320] text-slate-100 font-sans selection:bg-[#D5205D]/30">
       <PresenceTracker />
       <Suspense fallback={<GentleLoader />}>
-        {children}
+        <Outlet />
       </Suspense>
     </div>
   </ProtectedRoute>
@@ -125,18 +125,22 @@ function App() {
           <Route path="/onboarding" element={<ProtectedRoute><Suspense fallback={<PageTransitionLoader />}><Onboarding /></Suspense></ProtectedRoute>} />
 
           {/* O ORGANISMO SOCIAL (Alunos e Coordenação) */}
-          <Route path="/feed" element={<SocialLayout><Feed /></SocialLayout>} />
-          <Route path="/network" element={<SocialLayout><Network /></SocialLayout>} />
-          <Route path="/my-journey" element={<SocialLayout><MyJourney /></SocialLayout>} />
-          <Route path="/jobs" element={<SocialLayout><Jobs /></SocialLayout>} />
-          <Route path="/events" element={<SocialLayout><Events /></SocialLayout>} />
-          <Route path="/insights" element={<SocialLayout><Insights /></SocialLayout>} />
-          <Route path="/profile/:id" element={<SocialLayout><UserProfile /></SocialLayout>} />
-          <Route path="/notifications" element={<SocialLayout><Notifications /></SocialLayout>} />
-          <Route path="/coordination" element={<SocialLayout><Coordination /></SocialLayout>} />
+          <Route element={<SocialLayout />}>
+            <Route path="/feed" element={<Feed />} />
+            <Route path="/network" element={<Network />} />
+            <Route path="/my-journey" element={<MyJourney />} />
+            <Route path="/jobs" element={<Jobs />} />
+            <Route path="/events" element={<Events />} />
+            <Route path="/insights" element={<Insights />} />
+            <Route path="/profile/:id" element={<UserProfile />} />
+            <Route path="/notifications" element={<Notifications />} />
+            <Route path="/coordination" element={<Coordination />} />
+          </Route>
 
           {/* BACKOFFICE / NEGÓCIO (Isolado da rede social) */}
-          <Route path="/admin" element={<AdminLayout><Admin /></AdminLayout>} />
+          <Route element={<AdminLayout />}>
+            <Route path="/admin" element={<Admin />} />
+          </Route>
 
           {/* PLATAFORMA B2B CORPORATIVA (Visão da Empresa) */}
           <Route path="/company" element={<ProtectedRoute><Suspense fallback={<PageTransitionLoader />}><CompanyDashboard /></Suspense></ProtectedRoute>} />
