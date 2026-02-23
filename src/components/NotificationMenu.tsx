@@ -76,7 +76,7 @@ export const NotificationMenu = ({ onClose }: { onClose: () => void }) => {
   };
 
   return (
-    <div className="absolute top-12 right-0 w-80 bg-[#15335E] border border-white/10 rounded-2xl shadow-2xl z-50 overflow-hidden animate-fadeIn">
+    <div className="absolute top-14 -right-2 sm:right-0 w-[270px] sm:w-80 bg-[#15335E] border border-white/10 rounded-2xl shadow-2xl z-[100] overflow-hidden animate-fadeIn">
       {/* HEADER DO MENU */}
       <div className="p-4 border-b border-white/5 flex justify-between items-center bg-[#142239]">
         <h3 className="text-sm font-bold text-white flex items-center gap-2">
@@ -121,8 +121,8 @@ export const NotificationMenu = ({ onClose }: { onClose: () => void }) => {
                 )}
               </div>
 
-              <div className="flex-1 pr-6">
-                <p className="text-xs text-white leading-relaxed">
+              <div className="flex-1 pr-6 min-w-0">
+                <p className="text-xs text-white leading-relaxed break-words">
                   {notif.profiles?.full_name && <span className="font-bold">{notif.profiles.full_name} </span>}
                   {notif.content}
                 </p>
