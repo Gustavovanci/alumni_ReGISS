@@ -79,12 +79,12 @@ export const Network = () => {
             <p className="text-slate-400 text-sm mt-1">Conecte-se com alunos e ex-alunos da instituição ({filteredProfiles.length} conexões)</p>
           </div>
 
-          <div className="flex bg-[#15335E] p-1 rounded-xl border border-white/5 shadow-lg overflow-x-auto max-w-full custom-scrollbar">
+          <div className="flex bg-[#15335E] p-1.5 rounded-2xl border border-white/5 shadow-lg overflow-x-auto w-full md:w-auto snap-x snap-mandatory hide-scrollbar gap-1">
             {['TODOS', 'R1', 'R2', 'R+'].map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f as any)}
-                className={`px-5 py-2 rounded-lg text-xs font-bold transition-all uppercase whitespace-nowrap ${filter === f ? 'bg-[#D5205D] text-white shadow-lg' : 'text-slate-400 hover:text-white'
+                className={`px-6 py-2.5 rounded-xl text-xs font-bold transition-all uppercase whitespace-nowrap snap-center flex-shrink-0 ${filter === f ? 'bg-[#D5205D] text-white shadow-[0_0_15px_rgba(213,32,93,0.3)]' : 'text-slate-400 hover:text-white hover:bg-white/5'
                   }`}
               >
                 {f === 'R+' ? 'Alumni (R+)' : f}
@@ -93,15 +93,15 @@ export const Network = () => {
           </div>
         </div>
 
-        {/* BARRA DE BUSCA */}
-        <div className="relative mb-8">
-          <Search className="absolute left-4 top-3.5 text-slate-500" size={20} />
+        {/* BARRA DE BUSCA (Apenas Desktop) */}
+        <div className="relative mb-8 hidden md:block">
+          <Search className="absolute left-4 top-4 text-slate-500" size={20} />
           <input
             type="text"
             placeholder="Busque por nome, cargo ou interesse..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
-            className="w-full bg-[#15335E] border border-white/10 rounded-2xl pl-12 pr-4 py-4 outline-none focus:border-[#D5205D] transition-colors text-white placeholder:text-slate-500 shadow-lg"
+            className="w-full bg-[#15335E] border border-white/10 rounded-2xl pl-12 pr-4 py-4 outline-none focus:border-[#D5205D] focus:shadow-[0_0_20px_rgba(213,32,93,0.15)] transition-all text-white placeholder:text-slate-500 shadow-lg text-sm"
           />
         </div>
 
