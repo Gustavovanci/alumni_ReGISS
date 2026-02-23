@@ -301,7 +301,7 @@ export const ForCompanies = () => {
                                                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Nome da Instituição *</label>
                                                     <div className="flex items-center bg-[#142239] rounded-xl px-4 border border-white/5 focus-within:border-blue-500 transition-colors shadow-inner">
                                                         <Building size={18} className="text-slate-500" />
-                                                        <input type="text" value={formData.company_name} onChange={e => setFormData({ ...formData, company_name: e.target.value })} className="w-full bg-transparent border-none p-4 text-white outline-none placeholder:text-slate-600" placeholder="Ex: Hospital Sírio-Libanês" required />
+                                                        <input type="text" value={formData.company_name} onChange={e => setFormData({ ...formData, company_name: e.target.value })} className="w-full bg-transparent border-none p-4 text-white outline-none placeholder:text-slate-600" placeholder="Nome da Instituição" required />
                                                     </div>
                                                 </div>
                                                 <div className="space-y-2">
