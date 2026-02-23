@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import { Network, Briefcase, TrendingUp, ShieldCheck, Users, Target, Activity, Share2, Calculator } from 'lucide-react';
 
 /* ─── Core Pulsing Text ─── */
@@ -122,6 +123,19 @@ const CoreText = () => {
 export const LandingAlumni = () => {
     const navigate = useNavigate();
 
+    useEffect(() => {
+        const checkUser = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session) {
+                const { data } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+                if (data?.role === 'admin') navigate('/admin');
+                else if (data?.role === 'company') navigate('/admin-parceiros');
+                else navigate('/feed');
+            }
+        };
+        checkUser();
+    }, [navigate]);
+
     const icons = [
         { icon: TrendingUp, color: '#34d399', glowColor: '#10b981', orbitRadius: 170, angle: 310, duration: 38 },
         { icon: Network, color: '#f472b6', glowColor: '#ec4899', orbitRadius: 170, angle: 40, duration: 38, size: 56, iconSize: 26 },
@@ -132,11 +146,11 @@ export const LandingAlumni = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-[#0B1320] text-slate-200 font-sans selection:bg-[#D5205D]/30 overflow-hidden relative flex flex-col">
+        <div className="min-h-screen bg-[#0B1320] text-slate-200 font-sans selection:bg-[#D5205D]/30 overflow-hidden relative">
 
             {/* Background Orbs */}
-            <div className="absolute top-0 left-1/2 w-[800px] h-[800px] bg-[#D5205D]/10 rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[150px] pointer-events-none" />
+            <div className="absolute top-0 left-0 w-[600px] h-[600px] bg-[#D5205D]/10 rounded-full blur-[150px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
 
             <style>{`
               @keyframes spinArm {
@@ -158,31 +172,30 @@ export const LandingAlumni = () => {
             `}</style>
 
             {/* Header */}
-            <nav className="w-full absolute top-0 left-0 z-50 border-b border-white/5 bg-[#0B1320]/50 backdrop-blur-md">
-                <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <nav className="w-full absolute top-0 left-0 p-6 z-50">
+                <div className="max-w-6xl mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <img
                             src="/apple-touch-icon.png"
                             alt="Logo ReGISS"
-                            className="w-10 h-10 object-contain rounded-xl shadow-[0_0_15px_rgba(213,32,93,0.3)] border border-white/10"
+                            className="w-10 h-10 object-contain rounded-xl shadow-lg shadow-[#D5205D]/20 border border-white/5"
                         />
-                        <span className="text-xl md:text-2xl font-bold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                        <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
                             Alumni <span className="text-[#D5205D]">ReGISS</span>
                         </span>
                     </div>
-                    <div />
                 </div>
             </nav>
 
             {/* Hero Section */}
-            <main className="relative z-10 flex-1 flex flex-col justify-center pt-32 pb-20 px-6">
-                <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 lg:gap-8 items-center w-full">
+            <main className="relative z-10 pt-32 pb-20 px-6 min-h-screen flex flex-col justify-center">
+                <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
 
                     {/* Coluna de Texto */}
-                    <div className="space-y-8 text-center lg:text-left order-2 lg:order-1 mt-10 lg:mt-0">
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm mx-auto lg:mx-0">
-                            <span className="w-2 h-2 rounded-full bg-[#D5205D] animate-pulse shadow-[0_0_10px_rgba(213,32,93,0.8)]"></span>
-                            <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">A Elite da Gestão em Saúde</span>
+                    <div className="space-y-8">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#15335E]/50 border border-blue-500/20 backdrop-blur-sm">
+                            <span className="w-2 h-2 rounded-full bg-[#D5205D] animate-pulse"></span>
+                            <span className="text-xs font-bold text-blue-300 uppercase tracking-widest">A Elite da Gestão em Saúde</span>
                         </div>
 
                         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.15] tracking-tight">
@@ -196,16 +209,16 @@ export const LandingAlumni = () => {
                             A plataforma exclusiva para residentes e Alumnis do ReGISS. Integre-se ao maior capital intelectual do Clínicas, interaja e acesse oportunidades corporativas reais.
                         </p>
 
-                        <div className="flex flex-col sm:flex-row gap-4 pt-4 justify-center lg:justify-start">
+                        <div className="flex flex-col sm:flex-row gap-4 pt-4">
                             <button
                                 onClick={() => navigate('/login')}
-                                className="bg-gradient-to-r from-[#D5205D] to-[#9B1743] hover:from-[#E22E6A] hover:to-[#A71C4B] text-white px-8 py-4 rounded-xl font-bold text-base transition-all shadow-[0_0_30px_rgba(213,32,93,0.3)] hover:shadow-[0_0_40px_rgba(213,32,93,0.5)] hover:-translate-y-1 w-full sm:w-auto text-center"
+                                className="bg-gradient-to-r from-[#D5205D] to-[#9B1743] hover:from-[#E22E6A] hover:to-[#A71C4B] text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-[0_0_30px_rgba(213,32,93,0.3)] hover:shadow-[0_0_40px_rgba(213,32,93,0.5)] hover:-translate-y-1 w-full sm:w-auto text-center"
                             >
                                 Acessar Rede Alumni
                             </button>
                             <button
                                 onClick={() => navigate('/para-empresas')}
-                                className="bg-[#142239]/80 hover:bg-[#1A2C49] backdrop-blur-md border border-white/10 hover:border-blue-500/30 text-white px-8 py-4 rounded-xl font-bold text-base transition-all w-full sm:w-auto text-center"
+                                className="bg-[#15335E] hover:bg-[#1C4177] border border-blue-500/20 shadow-[0_0_15px_rgba(21,51,94,0.5)] text-white px-8 py-4 rounded-xl font-bold text-lg transition-all w-full sm:w-auto text-center"
                             >
                                 Portal de Parceiros
                             </button>
@@ -213,8 +226,7 @@ export const LandingAlumni = () => {
                     </div>
 
                     {/* ─── ORBITAL VISUAL ─── */}
-                    <div className="relative flex items-center justify-center order-1 lg:order-2"
-                        style={{ width: '100%', aspectRatio: '1/1', maxWidth: 'min(500px, 90vw)', margin: '0 auto' }}>
+                    <div className="relative w-full h-[500px] flex items-center justify-center">
 
                         {/* Ambient outer glow */}
                         <div style={{
@@ -328,16 +340,16 @@ export const LandingAlumni = () => {
             </main>
 
             {/* Seção de Features */}
-            <section className="relative z-10 py-20 sm:py-24 bg-[#142239] border-t border-white/5">
-                <div className="max-w-7xl mx-auto px-6">
-                    <div className="text-center mb-12 sm:mb-16">
-                        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Capital social que gera resultados</h2>
-                        <p className="text-slate-400 text-sm sm:text-base">Projetado para potencializar o impacto de quem gere o ecossistema da saúde.</p>
+            <section className="relative z-10 py-24 bg-[#142239] border-t border-white/5">
+                <div className="max-w-6xl mx-auto px-6">
+                    <div className="text-center mb-16">
+                        <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Capital social que gera resultados</h2>
+                        <p className="text-slate-400">Projetado para potencializar o impacto de quem gere o ecossistema da saúde.</p>
                     </div>
 
-                    <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
-                        <div className="bg-[#0B1320] p-8 rounded-[32px] border border-white/5 shadow-xl hover:border-[#D5205D]/30 transition-all hover:-translate-y-1 group">
-                            <div className="w-14 h-14 bg-[#15335E] rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-[#15335E]/50">
+                    <div className="grid md:grid-cols-3 gap-8">
+                        <div className="bg-[#0B1320] p-8 rounded-3xl border border-white/5 shadow-xl hover:border-[#D5205D]/50 transition-colors group">
+                            <div className="w-14 h-14 bg-[#15335E] rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                                 <Users className="text-blue-400 w-7 h-7" />
                             </div>
                             <h3 className="text-xl font-bold text-white mb-3">Conexão Geracional</h3>
@@ -346,8 +358,8 @@ export const LandingAlumni = () => {
                             </p>
                         </div>
 
-                        <div className="bg-[#0B1320] p-8 rounded-[32px] border border-white/5 shadow-xl hover:border-emerald-500/30 transition-all hover:-translate-y-1 group">
-                            <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-emerald-500/10">
+                        <div className="bg-[#0B1320] p-8 rounded-3xl border border-white/5 shadow-xl hover:border-[#D5205D]/50 transition-colors group">
+                            <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                                 <Briefcase className="text-emerald-400 w-7 h-7" />
                             </div>
                             <h3 className="text-xl font-bold text-white mb-3">Curadoria de Carreira</h3>
@@ -356,8 +368,8 @@ export const LandingAlumni = () => {
                             </p>
                         </div>
 
-                        <div className="bg-[#0B1320] p-8 rounded-[32px] border border-white/5 shadow-xl hover:border-[#D5205D]/30 transition-all hover:-translate-y-1 group">
-                            <div className="w-14 h-14 bg-[#D5205D]/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg shadow-[#D5205D]/10">
+                        <div className="bg-[#0B1320] p-8 rounded-3xl border border-white/5 shadow-xl hover:border-[#D5205D]/50 transition-colors group">
+                            <div className="w-14 h-14 bg-[#D5205D]/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                                 <ShieldCheck className="text-[#D5205D] w-7 h-7" />
                             </div>
                             <h3 className="text-xl font-bold text-white mb-3">Comunicação Oficial</h3>
