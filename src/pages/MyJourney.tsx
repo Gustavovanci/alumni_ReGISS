@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Save, Plus, Briefcase, GraduationCap, Trash2, Camera, Palette, Send, Edit3, Award, MessageCircle, Lock } from 'lucide-react';
+import { Save, Plus, Briefcase, GraduationCap, Trash2, Camera, Palette, Send, Edit3, Award, MessageCircle, Lock, Loader2 } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 
 export const MyJourney = () => {
@@ -141,7 +141,7 @@ export const MyJourney = () => {
 
   const handleDeleteItem = async (id: string) => { if (confirm('Apagar item da jornada?')) { await supabase.from('career_journey').delete().eq('id', id); fetchData(); } };
 
-  if (loading) return <div className="min-h-screen bg-[#142239] text-white flex items-center justify-center">Carregando...</div>;
+  if (loading) return <div className="min-h-screen bg-[#142239] text-white flex items-center justify-center"><Loader2 className="w-10 h-10 text-[#D5205D] animate-spin" /></div>;
 
   return (
     <div className="min-h-screen bg-[#142239] text-slate-100 font-sans pb-20 p-4 md:p-8">

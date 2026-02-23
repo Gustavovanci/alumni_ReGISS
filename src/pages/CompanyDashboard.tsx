@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Building, Plus, Users, Target, Check, XCircle, Activity, ExternalLink, Trash2, Briefcase } from 'lucide-react';
+import { Building, Plus, Users, Target, Check, XCircle, Activity, ExternalLink, Trash2, Briefcase, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const CompanyDashboard = () => {
@@ -127,7 +127,7 @@ export const CompanyDashboard = () => {
         toast.success("Candidato aprovado e notificado!");
     };
 
-    if (loading) return <div className="min-h-screen bg-[#142239] flex items-center justify-center text-white">Carregando painel corporativo...</div>;
+    if (loading) return <div className="min-h-screen bg-[#142239] flex items-center justify-center text-white"><Loader2 className="w-10 h-10 text-[#D5205D] animate-spin" /></div>;
 
     return (
         <div className="w-full max-w-7xl mx-auto p-4 md:p-6 text-slate-100 pb-20">

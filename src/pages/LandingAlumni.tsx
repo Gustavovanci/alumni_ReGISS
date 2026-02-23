@@ -41,7 +41,7 @@ export const LandingAlumni = () => {
                             O hub de conexão para <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D5205D] to-[#FF4B82]">
                                 líderes e futuros líderes
-                            </span> em gestão de saúde.
+                            </span> em gestão hospitalar.
                         </h1>
 
                         <p className="text-lg text-slate-400 max-w-xl leading-relaxed">
@@ -66,13 +66,13 @@ export const LandingAlumni = () => {
 
                     {/* Hero Visuals / Mockup abstrato focado em Gestão */}
                     <div className="relative w-full h-[500px] flex items-center justify-center">
-                        {/* Círculo Central Escuro */}
-                        <div className="absolute w-[400px] h-[400px] bg-[#142239]/80 rounded-full border border-white/5 backdrop-blur-xl shadow-2xl flex items-center justify-center">
-                            <LineChart className="w-32 h-32 text-[#D5205D]/20 animate-pulse" />
+                        {/* Círculo Central Escuro com a Logo */}
+                        <div className="absolute w-[320px] h-[320px] sm:w-[380px] sm:h-[380px] bg-[#142239]/80 rounded-full border border-white/5 backdrop-blur-xl shadow-2xl flex items-center justify-center drop-shadow-[0_0_25px_rgba(213,32,93,0.15)] z-20">
+                            <img src="/ReGISS-transparent.png" alt="ReGISS Oficial" className="w-[80%] max-w-[280px] object-contain drop-shadow-2xl" />
                         </div>
 
                         {/* Orbiting Elements */}
-                        <div className="absolute w-full h-full animate-[spin_40s_linear_infinite]">
+                        <div className="absolute w-full h-full animate-[spin_40s_linear_infinite] pointer-events-none z-10">
                             <div className="absolute top-[10%] left-[20%] w-16 h-16 bg-[#15335E] rounded-2xl border border-blue-500/30 shadow-lg flex items-center justify-center -rotate-[40deg]">
                                 <Building className="text-blue-400 w-8 h-8" />
                             </div>
@@ -81,6 +81,9 @@ export const LandingAlumni = () => {
                             </div>
                             <div className="absolute top-[30%] right-[15%] w-14 h-14 bg-emerald-500/10 rounded-xl border border-emerald-500/30 backdrop-blur-md flex items-center justify-center rotate-[15deg]">
                                 <TrendingUp className="text-emerald-400 w-7 h-7" />
+                            </div>
+                            <div className="absolute bottom-[30%] left-[15%] w-14 h-14 bg-amber-500/10 rounded-xl border border-amber-500/30 backdrop-blur-md flex items-center justify-center rotate-[15deg]">
+                                <LineChart className="text-amber-400 w-7 h-7" />
                             </div>
                         </div>
                     </div>
@@ -110,9 +113,9 @@ export const LandingAlumni = () => {
                             <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                                 <Briefcase className="text-emerald-400 w-7 h-7" />
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-3">Conexões Estratégicas</h3>
+                            <h3 className="text-xl font-bold text-white mb-3">Curadoria de Carreira</h3>
                             <p className="text-slate-400 leading-relaxed text-sm">
-                                Acesse um mural exclusivo de vagas executivas e de gestão diretamente conectadas com hospitais, clínicas e healthtechs parceiras do ReGISS.
+                                Explore novos caminhos de desenvolvimento profissional através do networking ativo com líderes e instituições do ecossistema de saúde.
                             </p>
                         </div>
 

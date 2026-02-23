@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bell, Check, Heart, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Bell, Check, Heart, MessageCircle, Loader2 } from 'lucide-react';
 
 export const Notifications = () => {
   const navigate = useNavigate();
@@ -50,7 +50,7 @@ export const Notifications = () => {
 
       <main className="max-w-2xl mx-auto px-4 py-6">
         {loading ? (
-          <p className="text-center text-slate-500 mt-10">Carregando...</p>
+          <div className="flex justify-center mt-10"><Loader2 className="w-8 h-8 text-[#D5205D] animate-spin" /></div>
         ) : notifications.length === 0 ? (
           <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl">
             <Bell size={48} className="mx-auto text-slate-700 mb-4" />

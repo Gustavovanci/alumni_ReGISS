@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useParams } from 'react-router-dom';
-import { Briefcase, MapPin, Send } from 'lucide-react';
+import { Briefcase, MapPin, Send, Loader2 } from 'lucide-react';
 import { getRegissStatus } from '../utils/regissLogic';
 import { GamifiedJourney } from '../components/GamifiedJourney';
 
@@ -38,7 +38,7 @@ export const UserProfile = () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#142239] text-white flex items-center justify-center">Carregando perfil...</div>;
+  if (loading) return <div className="min-h-screen bg-[#142239] text-white flex items-center justify-center"><Loader2 className="w-10 h-10 text-[#D5205D] animate-spin" /></div>;
   if (!profile) return <div className="min-h-screen bg-[#142239] text-white flex items-center justify-center">Usuário não encontrado.</div>;
 
   const isCoordinator = profile.role === 'coordination';
