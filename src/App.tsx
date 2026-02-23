@@ -43,16 +43,7 @@ const PresenceTracker = () => {
   return null;
 };
 
-// COMPONENTE DE LOADING DE TRANSIÇÃO BEM SUAVE (SKELETON GLOBAL)
-const PageTransitionLoader = () => (
-  <div className="min-h-screen bg-[#142239] flex flex-col items-center justify-center">
-    <img
-      src="/apple-touch-icon.png"
-      alt="Carregando ReGISS..."
-      className="w-16 h-16 object-contain rounded-2xl shadow-[0_0_20px_rgba(213,32,93,0.3)] mb-4 animate-[pulse_1.5s_ease-in-out_infinite]"
-    />
-  </div>
-);
+
 
 import { Auth } from './pages/Auth';
 import { LandingAlumni } from './pages/LandingAlumni';
@@ -144,7 +135,7 @@ function App() {
           <Route path="/para-empresas" element={<ForCompanies />} />
 
           {/* ONBOARDING */}
-          <Route path="/onboarding" element={<ProtectedRoute><Suspense fallback={<PageTransitionLoader />}><Onboarding /></Suspense></ProtectedRoute>} />
+          <Route path="/onboarding" element={<ProtectedRoute><Suspense fallback={<GentleLoader />}><Onboarding /></Suspense></ProtectedRoute>} />
 
           {/* O ORGANISMO SOCIAL (Alunos e Coordenação) */}
           <Route element={<SocialLayout />}>
@@ -165,7 +156,7 @@ function App() {
           </Route>
 
           {/* PLATAFORMA B2B CORPORATIVA (Visão da Empresa) */}
-          <Route path="/company" element={<ProtectedRoute><Suspense fallback={<PageTransitionLoader />}><CompanyDashboard /></Suspense></ProtectedRoute>} />
+          <Route path="/company" element={<ProtectedRoute><Suspense fallback={<GentleLoader />}><CompanyDashboard /></Suspense></ProtectedRoute>} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
