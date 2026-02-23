@@ -1,4 +1,4 @@
-import React, { useEffect, Suspense, lazy } from 'react';
+import React, { useEffect, useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { supabase } from './lib/supabase';
@@ -6,6 +6,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { GlobalFAB } from './components/GlobalFAB';
 import { Toaster } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import { SplashScreen } from './components/SplashScreen';
 
 // RASTREADOR DE PRESENÇA (MANTIDO)
 const PresenceTracker = () => {
@@ -111,6 +112,27 @@ const AdminLayout = () => (
 );
 
 function App() {
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // Splash Screen Bloqueante Native-like
+  useEffect(() => {
+    const initApp = async () => {
+      // Manda o request pro Supabase checar silenciosamente se tem token válido ou não.
+      await supabase.auth.getSession();
+
+      // Força a tela de Splash Screen por pelo menos 1.2 segundos para garantir o UX nativo
+      setTimeout(() => {
+        setIsInitializing(false);
+      }, 1200);
+    };
+
+    initApp();
+  }, []);
+
+  if (isInitializing) {
+    return <SplashScreen />;
+  }
+
   return (
     <>
       <Toaster theme="dark" position="top-right" richColors toastOptions={{ style: { background: '#15335E', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' } }} />
