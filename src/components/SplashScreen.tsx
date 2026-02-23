@@ -15,8 +15,8 @@ export const SplashScreen = () => {
             </div>
 
             <div className="flex flex-col items-center justify-center pb-8 animate-fadeIn">
-                <span className="text-slate-500 text-xs font-medium mb-1 tracking-widest">from</span>
-                <span className="text-xl font-black bg-gradient-to-r from-amber-500 via-[#D5205D] to-blue-500 text-transparent bg-clip-text drop-shadow-[0_0_15px_rgba(213,32,93,0.6)]">
+                <span className="text-slate-600 text-xs font-medium mb-1 tracking-widest">from</span>
+                <span className="text-xl font-black bg-gradient-to-r from-[#B32F50] via-[#D5205D] to-[#275A80] text-transparent bg-clip-text drop-shadow-[0_0_15px_rgba(213,32,93,0.4)]">
                     ALUMNI ReGISS
                 </span>
             </div>
