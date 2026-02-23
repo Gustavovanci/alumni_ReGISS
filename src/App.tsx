@@ -109,6 +109,9 @@ function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [isFading, setIsFading] = useState(false);
 
+  // Detecção heurística de celular vs desktop
+  const isMobile = window.innerWidth <= 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+
   useEffect(() => {
     let isMounted = true;
     const initializeApp = async () => {
@@ -125,13 +128,17 @@ function App() {
       // 2. Agora sabemos se tem alguem logado, podemos soltar a montagem da cortina de fundo (Routes)
       if (isMounted) setSessionChecked(true);
 
-      // 3. Aguarda o tempo natural de animacao e some a Splash suavemente
-      setTimeout(() => {
-        if (isMounted) setIsFading(true);
+      // 3. Aguarda o tempo natural de animacao e some a Splash se for celular. Se não for, fecha sumariamente.
+      if (isMobile) {
         setTimeout(() => {
-          if (isMounted) setShowSplash(false);
-        }, 700);
-      }, 1500);
+          if (isMounted) setIsFading(true);
+          setTimeout(() => {
+            if (isMounted) setShowSplash(false);
+          }, 700);
+        }, 1500);
+      } else {
+        if (isMounted) setShowSplash(false);
+      }
     };
 
     initializeApp();
@@ -161,7 +168,15 @@ function App() {
 
   return (
     <>
-      {showSplash && <SplashScreen isFading={isFading} />}
+      {showSplash && (
+        isMobile ? (
+          <SplashScreen isFading={isFading} />
+        ) : (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#142239]">
+            <Loader2 className="w-12 h-12 text-[#D5205D] animate-spin" />
+          </div>
+        )
+      )}
       <Toaster theme="dark" position="top-right" richColors toastOptions={{ style: { background: '#15335E', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' } }} />
       <Router>
         <Suspense fallback={<div className="min-h-screen bg-[#142239]" />}>
