@@ -62,7 +62,7 @@ export const PostCard = ({ post, currentUserId }: { post: any, currentUserId: st
   const isVacancy = post.type === 'vacancy';
 
   return (
-    <div className={`bg-[#15335E] border rounded-2xl p-5 shadow-lg transition-all ${isVacancy ? 'border-[#D5205D]/30' : 'border-white/5'}`}>
+    <div className={`bg-[#15335E] border-y md:border md:rounded-2xl p-4 md:p-5 shadow-none md:shadow-lg transition-all border-x-0 md:border-x ${isVacancy ? 'border-y-[#D5205D]/30 md:border-[#D5205D]/30' : 'border-y-white/5 md:border-white/5'}`}>
       <div className="flex justify-between items-start mb-3">
         <div className="flex gap-3 items-center cursor-pointer group" onClick={() => navigate(`/profile/${post.user_id}`)}>
           <div className="w-10 h-10 bg-[#142239] rounded-full border border-white/10 overflow-hidden shrink-0">
@@ -87,7 +87,7 @@ export const PostCard = ({ post, currentUserId }: { post: any, currentUserId: st
         )}
       </div>
 
-      <p className="text-slate-200 text-sm whitespace-pre-wrap leading-relaxed">
+      <p className="text-slate-200 text-sm whitespace-pre-wrap break-words leading-relaxed">
         {post.content.replace(/\[AVISO_COORD_TARGET:[A-Z0-9]+\]\s*/g, '')}
       </p>
 

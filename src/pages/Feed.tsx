@@ -49,10 +49,7 @@ export const Feed = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const [systemUpdates, setSystemUpdates] = useState<any[]>([]);
-  const [dismissedUpdates, setDismissedUpdates] = useState<string[]>(() => {
-    const saved = localStorage.getItem('dismissed_updates');
-    return saved ? JSON.parse(saved) : [];
-  });
+  const [dismissedUpdates, setDismissedUpdates] = useState<string[]>([]);
 
   useEffect(() => { fetchData(); }, []);
 
@@ -86,7 +83,8 @@ export const Feed = () => {
       const { data: correctPostsData } = await supabase.from('posts').select(`*, profiles(full_name, profession, entry_year, job_title, avatar_url, role)`).eq('type', 'general').order('created_at', { ascending: false });
       setPosts(correctPostsData || []);
 
-      const savedDismissed = JSON.parse(localStorage.getItem('dismissed_updates') || '[]');
+      const savedDismissed = user.user_metadata?.dismissed_updates || JSON.parse(localStorage.getItem('dismissed_updates') || '[]');
+      setDismissedUpdates(savedDismissed); // Atualiza o estado da memória Local
       const userJoinedAt = new Date(profileData.created_at).getTime();
 
       const visibleUpdates = (updatesData || []).filter(u => {
@@ -149,11 +147,20 @@ export const Feed = () => {
     }
   };
 
-  const handleDismissUpdate = (id: string) => {
+  const handleDismissUpdate = async (id: string) => {
     const newDismissed = [...dismissedUpdates, id];
     setDismissedUpdates(newDismissed);
     localStorage.setItem('dismissed_updates', JSON.stringify(newDismissed));
     setSystemUpdates(systemUpdates.filter(u => u.id !== id));
+
+    // Backup em nuvem via User Metadata para persistir entre sessions de login diferentes
+    try {
+      await supabase.auth.updateUser({
+        data: { dismissed_updates: newDismissed }
+      });
+    } catch (err) {
+      console.error("Erro sincronizando metadado da sessao: ", err);
+    }
   };
 
   const userTheme = profile?.theme_color || 'regiss-magenta';
@@ -161,14 +168,14 @@ export const Feed = () => {
   const themeFromClass = userTheme === 'regiss-petrol' ? 'from-[#275A80]' : userTheme === 'regiss-wine' ? 'from-[#B32F50]' : 'from-[#D5205D]';
 
   return (
-    <div className="min-h-screen bg-[#142239] text-slate-100 font-sans p-4 md:p-8 pb-24">
+    <div className="min-h-screen bg-[#142239] text-slate-100 font-sans p-0 md:p-8 pb-24">
       <div className="max-w-7xl mx-auto">
 
         {/* HEADER */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8 border-b border-white/5 pb-6">
+        <div className="flex justify-between items-center gap-4 mb-4 md:mb-8 border-b border-white/5 p-5 md:p-0 pb-5 md:pb-6 bg-[#15335E]/80 md:bg-transparent backdrop-blur-xl sticky top-0 z-50">
           <div>
-            <h1 className="text-3xl font-bold text-white">Alumni <span className="text-[#D5205D]">ReGISS</span></h1>
-            <p className="text-slate-400 text-sm mt-1">Sua rede de gestão e conexão em saúde</p>
+            <h1 className="text-xl md:text-3xl font-bold text-white">Alumni <span className="text-[#D5205D]">ReGISS</span></h1>
+            <p className="text-slate-400 text-xs md:text-sm mt-0.5">Sua rede de gestão e conexão</p>
           </div>
 
           <div className="flex items-center gap-4 relative">
@@ -228,7 +235,7 @@ export const Feed = () => {
             ) : (
               <>
                 {/* BOAS VINDAS SIMPLIFICADO */}
-                <div className={`bg-gradient-to-r ${themeFromClass} to-[#142239] border border-white/10 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl`}>
+                <div className={`bg-gradient-to-r ${themeFromClass} to-[#142239] border-y md:border border-white/10 rounded-none md:rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl`}>
                   <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1"><Sparkles className="text-white/80 w-4 h-4" /><span className="text-white/70 text-xs font-bold uppercase tracking-widest">Bem-vindo(a) de volta</span></div>
@@ -239,7 +246,7 @@ export const Feed = () => {
 
                 {/* SESSÃO DE ATUALIZAÇÕES DO SISTEMA (BANNERS) */}
                 {systemUpdates.length > 0 && systemUpdates.map(update => (
-                  <div key={update.id} className="bg-gradient-to-r from-[#275A80] to-[#142239] border border-[#275A80]/50 rounded-3xl p-6 md:p-8 relative shadow-xl animate-fadeIn">
+                  <div key={update.id} className="bg-gradient-to-r from-[#275A80] to-[#142239] border-y md:border md:border-[#275A80]/50 rounded-none md:rounded-3xl p-6 md:p-8 relative shadow-xl animate-fadeIn">
                     <button onClick={() => handleDismissUpdate(update.id)} className="absolute top-4 right-4 text-white/50 hover:text-white bg-black/20 hover:bg-black/40 p-2 rounded-full transition-all" title="Fechar aviso">
                       <X size={16} />
                     </button>
@@ -265,9 +272,9 @@ export const Feed = () => {
                 ))}
 
                 {/* LISTA DE POSTS */}
-                <div className="space-y-6">
+                <div className="space-y-2 md:space-y-6">
                   {/* O INPUT DE CRIAR POST COM AUTO-RESIZE */}
-                  <div className="bg-[#15335E] border border-white/5 rounded-3xl p-5 shadow-xl mb-8">
+                  <div className="bg-[#15335E] border-y md:border border-white/5 rounded-none md:rounded-3xl p-5 shadow-xl mb-4 md:mb-8">
                     <div className="flex gap-4">
                       <div className="w-12 h-12 rounded-full bg-[#142239] flex-shrink-0 flex items-center justify-center font-bold text-slate-400 border border-white/5 overflow-hidden shadow-inner">{profile?.avatar_url ? <img src={profile.avatar_url} className="w-full h-full object-cover" alt="Me" /> : profile?.full_name?.charAt(0)}</div>
                       <textarea
