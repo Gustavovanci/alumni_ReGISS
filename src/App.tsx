@@ -45,9 +45,11 @@ const PresenceTracker = () => {
 // COMPONENTE DE LOADING DE TRANSIÇÃO BEM SUAVE (SKELETON GLOBAL)
 const PageTransitionLoader = () => (
   <div className="min-h-screen bg-[#142239] flex flex-col items-center justify-center">
-    <div className="w-12 h-12 bg-gradient-to-tr from-[#D5205D] to-[#B32F50] rounded-xl flex items-center justify-center font-bold text-white shadow-[0_0_15px_rgba(213,32,93,0.5)] mb-4 animate-pulse">
-      R
-    </div>
+    <img
+      src="/apple-touch-icon.png"
+      alt="Carregando ReGISS..."
+      className="w-16 h-16 object-contain rounded-2xl shadow-[0_0_20px_rgba(213,32,93,0.3)] mb-4 animate-[pulse_1.5s_ease-in-out_infinite]"
+    />
   </div>
 );
 
@@ -72,7 +74,11 @@ const CompanyDashboard = lazy(() => import('./pages/CompanyDashboard').then(m =>
 // Loading Secundário Discreto
 const GentleLoader = () => (
   <div className="h-screen w-full flex items-center justify-center bg-transparent">
-    <Loader2 className="w-8 h-8 text-[#D5205D] animate-spin opacity-50" />
+    <img
+      src="/apple-touch-icon.png"
+      alt="..."
+      className="w-10 h-10 object-contain opacity-50 animate-pulse"
+    />
   </div>
 );
 
