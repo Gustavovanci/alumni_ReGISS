@@ -226,7 +226,7 @@ export const LandingAlumni = () => {
                     </div>
 
                     {/* ─── ORBITAL VISUAL ─── */}
-                    <div className="relative w-full h-[500px] flex items-center justify-center">
+                    <div className="relative w-full h-[500px] hidden lg:flex items-center justify-center">
 
                         {/* Ambient outer glow */}
                         <div style={{
