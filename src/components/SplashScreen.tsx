@@ -1,8 +1,8 @@
 import React from 'react';
 
-export const SplashScreen = () => {
+export const SplashScreen = ({ isFading = false }: { isFading?: boolean }) => {
     return (
-        <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-between bg-[#142239] pb-12 pt-0">
+        <div className={`fixed inset-0 z-[9999] flex flex-col items-center justify-between bg-[#142239] pb-12 pt-0 transition-opacity duration-700 ease-in-out ${isFading ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <div className="flex-1 flex flex-col items-center justify-center relative w-full">
                 {/* Glow background */}
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 bg-[#D5205D]/20 blur-[60px] rounded-full"></div>

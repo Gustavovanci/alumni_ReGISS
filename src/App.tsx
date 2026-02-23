@@ -103,64 +103,104 @@ const AdminLayout = () => (
 );
 
 function App() {
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [session, setSession] = useState<any>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [sessionChecked, setSessionChecked] = useState(false);
+  const [showSplash, setShowSplash] = useState(true);
+  const [isFading, setIsFading] = useState(false);
 
-  // Splash Screen Bloqueante Native-like
   useEffect(() => {
-    const initApp = async () => {
-      // Manda o request pro Supabase checar silenciosamente se tem token válido ou não.
-      await supabase.auth.getSession();
+    let isMounted = true;
+    const initializeApp = async () => {
+      // 1. O Supabase verifica se tem token armazenado
+      const { data } = await supabase.auth.getSession();
 
-      // Força a tela de Splash Screen por pelo menos 1.2 segundos para garantir o UX nativo
+      if (data.session) {
+        if (isMounted) setSession(data.session);
+        // Pre-fetch da rule (Admin ou Comum ou Companhia) para roteamento nativo sem delays
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.session.user.id).single();
+        if (profile && isMounted) setUserRole(profile.role);
+      }
+
+      // 2. Agora sabemos se tem alguem logado, podemos soltar a montagem da cortina de fundo (Routes)
+      if (isMounted) setSessionChecked(true);
+
+      // 3. Aguarda o tempo natural de animacao e some a Splash suavemente
       setTimeout(() => {
-        setIsInitializing(false);
-      }, 1200);
+        if (isMounted) setIsFading(true);
+        setTimeout(() => {
+          if (isMounted) setShowSplash(false);
+        }, 700);
+      }, 1500);
     };
 
-    initApp();
+    initializeApp();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+      if (!isMounted) return;
+      setSession(newSession);
+      if (newSession) {
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', newSession.user.id).single();
+        if (profile) setUserRole(profile.role);
+      } else {
+        setUserRole(null);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
-  if (isInitializing) {
-    return <SplashScreen />;
-  }
+  const getRedirectPath = () => {
+    if (userRole === 'admin') return '/admin';
+    if (userRole === 'company') return '/company';
+    return '/feed';
+  };
 
   return (
     <>
+      {showSplash && <SplashScreen isFading={isFading} />}
       <Toaster theme="dark" position="top-right" richColors toastOptions={{ style: { background: '#15335E', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' } }} />
       <Router>
-        <Routes>
-          {/* VITRINE / EXTERNO */}
-          <Route path="/" element={<LandingAlumni />} />
-          <Route path="/login" element={<Auth />} />
-          <Route path="/para-empresas" element={<ForCompanies />} />
+        <Suspense fallback={<div className="min-h-screen bg-[#142239]" />}>
+          {sessionChecked && (
+            <Routes>
+              {/* VITRINE / EXTERNO */}
+              <Route path="/" element={session ? <Navigate to={getRedirectPath()} replace /> : <LandingAlumni />} />
+              <Route path="/login" element={session ? <Navigate to={getRedirectPath()} replace /> : <Auth />} />
+              <Route path="/para-empresas" element={<ForCompanies />} />
 
-          {/* ONBOARDING */}
-          <Route path="/onboarding" element={<ProtectedRoute><Suspense fallback={<GentleLoader />}><Onboarding /></Suspense></ProtectedRoute>} />
+              {/* ONBOARDING */}
+              <Route path="/onboarding" element={<ProtectedRoute><Suspense fallback={<GentleLoader />}><Onboarding /></Suspense></ProtectedRoute>} />
 
-          {/* O ORGANISMO SOCIAL (Alunos e Coordenação) */}
-          <Route element={<SocialLayout />}>
-            <Route path="/feed" element={<Feed />} />
-            <Route path="/network" element={<Network />} />
-            <Route path="/my-journey" element={<MyJourney />} />
-            <Route path="/jobs" element={<Jobs />} />
-            <Route path="/events" element={<Events />} />
-            <Route path="/insights" element={<Insights />} />
-            <Route path="/profile/:id" element={<UserProfile />} />
-            <Route path="/notifications" element={<Notifications />} />
-            <Route path="/coordination" element={<Coordination />} />
-          </Route>
+              {/* O ORGANISMO SOCIAL (Alunos e Coordenação) */}
+              <Route element={<SocialLayout />}>
+                <Route path="/feed" element={<Feed />} />
+                <Route path="/network" element={<Network />} />
+                <Route path="/my-journey" element={<MyJourney />} />
+                <Route path="/jobs" element={<Jobs />} />
+                <Route path="/events" element={<Events />} />
+                <Route path="/insights" element={<Insights />} />
+                <Route path="/profile/:id" element={<UserProfile />} />
+                <Route path="/notifications" element={<Notifications />} />
+                <Route path="/coordination" element={<Coordination />} />
+              </Route>
 
-          {/* BACKOFFICE / NEGÓCIO (Isolado da rede social) */}
-          <Route element={<AdminLayout />}>
-            <Route path="/admin" element={<Admin />} />
-          </Route>
+              {/* BACKOFFICE / NEGÓCIO (Isolado da rede social) */}
+              <Route element={<AdminLayout />}>
+                <Route path="/admin" element={<Admin />} />
+              </Route>
 
-          {/* PLATAFORMA B2B CORPORATIVA (Visão da Empresa) */}
-          <Route path="/company" element={<ProtectedRoute><Suspense fallback={<GentleLoader />}><CompanyDashboard /></Suspense></ProtectedRoute>} />
+              {/* PLATAFORMA B2B CORPORATIVA (Visão da Empresa) */}
+              <Route path="/company" element={<ProtectedRoute><Suspense fallback={<GentleLoader />}><CompanyDashboard /></Suspense></ProtectedRoute>} />
 
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+              {/* Fallback */}
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          )}
+        </Suspense>
       </Router>
     </>
   );
