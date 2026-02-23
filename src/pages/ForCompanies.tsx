@@ -138,13 +138,11 @@ export const ForCompanies = () => {
             <nav className="w-full border-b border-white/5 bg-[#0a111e]/80 backdrop-blur-xl fixed top-0 z-50">
                 <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-tr from-[#D5205D] to-[#B32F50] rounded-xl flex items-center justify-center font-bold text-white shadow-[0_0_15px_rgba(213,32,93,0.4)]">
-                            HC
-                        </div>
-                        <span className="font-bold text-xl tracking-wide text-white">Alumni <span className="font-light text-slate-400">Business</span></span>
+                        <img src="/apple-touch-icon.png" alt="Logo ReGISS" className="w-10 h-10 object-contain rounded-xl shadow-lg shadow-[#D5205D]/20 border border-white/5" />
+                        <span className="font-bold text-xl tracking-wide text-white">ReGISS <span className="font-light text-slate-400">Business</span></span>
                     </div>
-                    <Link to="/" className="text-sm font-bold text-slate-300 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-5 py-2.5 rounded-xl border border-white/5">
-                        Acesso Alunos
+                    <Link to="/" className="text-sm font-bold text-slate-300 hover:text-white transition-colors bg-white/5 hover:bg-white/10 px-5 py-2.5 rounded-xl border border-white/5 flex items-center gap-2">
+                        Entrar <ArrowRight size={16} />
                     </Link>
                 </div>
             </nav>

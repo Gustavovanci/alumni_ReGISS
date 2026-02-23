@@ -200,51 +200,55 @@ export const Events = () => {
     });
 
     return (
-      <div className="bg-[#15335E] rounded-2xl border border-white/5 overflow-hidden flex flex-col h-[650px] shadow-2xl">
-        <div className="flex border-b border-white/10 bg-[#142239]">
-          <div className="w-16 shrink-0 border-r border-white/10" />
-          {daysToShow.map((d, i) => (
-            <div key={i} className="flex-1 p-3 text-center border-r border-white/5 last:border-r-0">
-              <p className="text-[10px] text-slate-500 uppercase font-black">{d.toLocaleDateString('pt-BR', { weekday: 'short' })}</p>
-              <p className={`text-lg font-bold ${d.toDateString() === new Date().toDateString() ? 'text-[#D5205D]' : 'text-white'}`}>{d.getDate()}</p>
+      <div className="bg-[#15335E] rounded-2xl border border-white/5 overflow-hidden shadow-2xl">
+        <div className="overflow-auto custom-scrollbar h-[650px] relative">
+          <div className="min-w-[700px]">
+            <div className="flex border-b border-white/10 bg-[#142239] sticky top-0 z-40">
+              <div className="w-16 shrink-0 border-r border-white/10 sticky left-0 bg-[#142239] z-50" />
+              {daysToShow.map((d, i) => (
+                <div key={i} className="flex-1 p-3 text-center border-r border-white/5 last:border-r-0">
+                  <p className="text-[10px] text-slate-500 uppercase font-black">{d.toLocaleDateString('pt-BR', { weekday: 'short' })}</p>
+                  <p className={`text-lg font-bold ${d.toDateString() === new Date().toDateString() ? 'text-[#D5205D]' : 'text-white'}`}>{d.getDate()}</p>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar relative">
-          {hours.map(hour => (
-            <div key={hour} className="flex h-20 border-b border-white/5 relative">
-              <div className="w-16 shrink-0 text-[10px] text-slate-500 p-2 text-right font-bold border-r border-white/10">{`${hour}:00`}</div>
-              {daysToShow.map((date, i) => {
-                const { events } = getDayDetails(date);
-                const hourEvents = events.filter(e => new Date(e.start_time).getHours() === hour);
-                const isCurrentHourAndDay = date.toDateString() === currentTime.toDateString() && currentTime.getHours() === hour;
+            <div className="relative">
+              {hours.map(hour => (
+                <div key={hour} className="flex h-20 border-b border-white/5 relative">
+                  <div className="w-16 shrink-0 text-[10px] text-slate-500 p-2 text-right font-bold border-r border-white/10 sticky left-0 bg-[#15335E] z-30">{`${hour}:00`}</div>
+                  {daysToShow.map((date, i) => {
+                    const { events } = getDayDetails(date);
+                    const hourEvents = events.filter(e => new Date(e.start_time).getHours() === hour);
+                    const isCurrentHourAndDay = date.toDateString() === currentTime.toDateString() && currentTime.getHours() === hour;
 
-                return (
-                  <div
-                    key={i}
-                    onClick={() => openDayCard(date, hour)}
-                    className="flex-1 relative border-r border-white/5 last:border-r-0 hover:bg-white/[0.03] cursor-pointer"
-                  >
-                    {isCurrentHourAndDay && (
+                    return (
                       <div
-                        className="absolute left-0 right-0 border-t-2 border-[#D5205D] z-30 pointer-events-none"
-                        style={{ top: `${(currentTime.getMinutes() / 60) * 100}%` }}
+                        key={i}
+                        onClick={() => openDayCard(date, hour)}
+                        className="flex-1 relative border-r border-white/5 last:border-r-0 hover:bg-white/[0.03] cursor-pointer"
                       >
-                        <div className="absolute -left-1 -top-1.5 w-3 h-3 bg-[#D5205D] rounded-full shadow-[0_0_8px_#D5205D]"></div>
-                      </div>
-                    )}
+                        {isCurrentHourAndDay && (
+                          <div
+                            className="absolute left-0 right-0 border-t-2 border-[#D5205D] z-30 pointer-events-none"
+                            style={{ top: `${(currentTime.getMinutes() / 60) * 100}%` }}
+                          >
+                            <div className="absolute -left-1 -top-1.5 w-3 h-3 bg-[#D5205D] rounded-full shadow-[0_0_8px_#D5205D]"></div>
+                          </div>
+                        )}
 
-                    {hourEvents.map((ev, idx) => (
-                      <div key={idx} className="absolute inset-x-1 top-1 bottom-1 bg-blue-600 text-white p-2 rounded-lg text-[10px] font-bold shadow-lg overflow-hidden border-l-4 border-blue-300 z-10">
-                        {ev.title}
-                        <p className="text-[8px] opacity-70 mt-0.5">{new Date(ev.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        {hourEvents.map((ev, idx) => (
+                          <div key={idx} className="absolute inset-x-1 top-1 bottom-1 bg-blue-600 text-white p-2 rounded-lg text-[10px] font-bold shadow-lg overflow-hidden border-l-4 border-blue-300 z-10">
+                            {ev.title}
+                            <p className="text-[8px] opacity-70 mt-0.5">{new Date(ev.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
       </div>
     );

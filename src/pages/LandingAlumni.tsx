@@ -25,18 +25,6 @@ export const LandingAlumni = () => {
                             Alumni <span className="text-[#D5205D]">ReGISS</span>
                         </span>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <button onClick={() => navigate('/para-empresas')} className="hidden sm:block text-slate-400 font-medium hover:text-white transition-colors text-sm">
-                            Sou Empresa
-                        </button>
-                        <button
-                            onClick={() => navigate('/login')}
-                            className="bg-[#15335E] hover:bg-[#1C4177] text-white px-6 py-2.5 rounded-full font-bold text-sm transition-all border border-blue-500/20 shadow-[0_0_15px_rgba(21,51,94,0.5)] flex items-center gap-2"
-                        >
-                            Entrar
-                            <ArrowRight size={16} />
-                        </button>
-                    </div>
                 </div>
             </nav>
 
@@ -52,12 +40,12 @@ export const LandingAlumni = () => {
                         <h1 className="text-5xl md:text-6xl font-extrabold text-white leading-[1.1] tracking-tight">
                             O hub de conexão para <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D5205D] to-[#FF4B82]">
-                                líderes em gestão
-                            </span> hospitalar.
+                                líderes e futuros líderes
+                            </span> em gestão hospitalar.
                         </h1>
 
                         <p className="text-lg text-slate-400 max-w-xl leading-relaxed">
-                            A plataforma exclusiva para residentes (R1, R2) e Alumni do ReGISS. Integre-se ao maior capital intelectual do Clínicas, debata soluções operacionais e acesse oportunidades corporativas nas maiores instituições de saúde.
+                            A plataforma exclusiva para residentes e Alumnis do ReGISS. Integre-se, interaja e acesse oportunidades corporativas.
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 pt-4">
@@ -69,9 +57,9 @@ export const LandingAlumni = () => {
                             </button>
                             <button
                                 onClick={() => navigate('/para-empresas')}
-                                className="bg-[#142239] hover:bg-[#1A2C49] text-white border border-white/10 px-8 py-4 rounded-xl font-bold text-lg transition-all w-full sm:w-auto text-center"
+                                className="bg-[#15335E] hover:bg-[#1C4177] border border-blue-500/20 shadow-[0_0_15px_rgba(21,51,94,0.5)] text-white px-8 py-4 rounded-xl font-bold text-lg transition-all w-full sm:w-auto text-center"
                             >
-                                Portal de Parceiros (B2B)
+                                Portal de Parceiros
                             </button>
                         </div>
                     </div>
@@ -122,9 +110,9 @@ export const LandingAlumni = () => {
                             <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
                                 <Briefcase className="text-emerald-400 w-7 h-7" />
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-3">Curadoria de Carreira</h3>
+                            <h3 className="text-xl font-bold text-white mb-3">Conexões Estratégicas</h3>
                             <p className="text-slate-400 leading-relaxed text-sm">
-                                Muito além da Gupy. Acesse um mural de vagas executivas e de gestão patrocinadas diretamente por hospitais, clínicas e healthtechs parceiras do ReGISS.
+                                Acesse um mural exclusivo de vagas executivas e de gestão diretamente conectadas com hospitais, clínicas e healthtechs parceiras do ReGISS.
                             </p>
                         </div>
 
