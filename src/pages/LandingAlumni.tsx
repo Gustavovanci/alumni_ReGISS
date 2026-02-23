@@ -209,7 +209,7 @@ export const LandingAlumni = () => {
                             A plataforma exclusiva para residentes e Alumnis do ReGISS. Integre-se ao maior capital intelectual do Clínicas, interaja e acesse oportunidades corporativas reais.
                         </p>
 
-                        <div className="flex flex-col sm:flex-row gap-4 pt-4">
+                        <div className="flex flex-col gap-4 pt-4 md:hidden">
                             <button
                                 onClick={() => navigate('/login')}
                                 className="bg-gradient-to-r from-[#D5205D] to-[#9B1743] hover:from-[#E22E6A] hover:to-[#A71C4B] text-white px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-[0_0_30px_rgba(213,32,93,0.3)] hover:shadow-[0_0_40px_rgba(213,32,93,0.5)] hover:-translate-y-1 w-full sm:w-auto text-center"
@@ -339,8 +339,8 @@ export const LandingAlumni = () => {
                 </div>
             </main>
 
-            {/* Seção de Features */}
-            <section className="relative z-10 py-24 bg-[#142239] border-t border-white/5">
+            {/* Seção de Features (Apenas Desktop) */}
+            <section className="relative z-10 py-24 bg-[#142239] border-t border-white/5 hidden md:block">
                 <div className="max-w-6xl mx-auto px-6">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">Capital social que gera resultados</h2>
@@ -378,6 +378,23 @@ export const LandingAlumni = () => {
                             </p>
                         </div>
                     </div>
+
+                    {/* CTA Final Desktop */}
+                    <div className="mt-20 hidden md:flex justify-center gap-6 border-t border-white/5 pt-16">
+                        <button
+                            onClick={() => navigate('/login')}
+                            className="bg-gradient-to-r from-[#D5205D] to-[#9B1743] hover:from-[#E22E6A] hover:to-[#A71C4B] text-white px-10 py-5 rounded-2xl font-bold text-lg transition-all shadow-[0_0_30px_rgba(213,32,93,0.3)] hover:shadow-[0_0_40px_rgba(213,32,93,0.5)] hover:-translate-y-1 text-center"
+                        >
+                            Acessar Rede Alumni
+                        </button>
+                        <button
+                            onClick={() => navigate('/para-empresas')}
+                            className="bg-[#15335E] hover:bg-[#1C4177] border border-blue-500/20 shadow-[0_0_15px_rgba(21,51,94,0.5)] text-white px-10 py-5 rounded-2xl font-bold text-lg transition-all hover:scale-105 active:scale-95 text-center"
+                        >
+                            Se torne um parceiro
+                        </button>
+                    </div>
+
                 </div>
             </section>
 

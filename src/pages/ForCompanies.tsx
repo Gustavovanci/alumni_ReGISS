@@ -169,14 +169,8 @@ export const ForCompanies = () => {
                         Abandone a triagem exaustiva. Acesse o banco de talentos exclusivo dos ex-alunos e residentes de Gestão em Saúde do HCFMUSP. Profissionais altamente qualificados, filtrados pelas reais necessidades da sua instituição.
                     </p>
 
-                    <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                        <button onClick={() => { setActiveTab('lead'); setIsModalOpen(true); }} className="px-8 py-4 bg-white text-[#142239] font-bold rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-3 text-lg shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:scale-105 active:scale-95">
-                            Quero Construir uma Parceria <ArrowRight size={20} />
-                        </button>
-                        <button onClick={() => { setActiveTab('invite'); setIsModalOpen(true); }} className="px-8 py-4 bg-transparent border border-blue-500/30 text-blue-400 font-bold rounded-xl hover:bg-blue-500/10 transition-all flex items-center justify-center gap-3 text-lg shadow-[0_0_40px_rgba(59,130,246,0.1)] hover:scale-105 active:scale-95">
-                            <Key size={20} /> Tenho Código de Convite
-                        </button>
-                    </div>
+                    {/* Botões CTA movidos para o final da página conforme diretriz de UX */}
+                    <div className="hidden"></div>
                 </div>
 
                 {/* IMAGEM ILUSTRATIVA (MOCK DO DASHBOARD B2B) */}
@@ -230,6 +224,19 @@ export const ForCompanies = () => {
                             <div className="w-14 h-14 bg-green-500/10 text-green-400 rounded-2xl flex items-center justify-center mb-6"><Briefcase size={28} /></div>
                             <h3 className="text-xl font-bold mb-3 text-white">Vagas com Selo Ouro</h3>
                             <p className="text-slate-400 text-sm leading-relaxed">Prefere apenas postar a vaga? Sem problemas. Vagas de parceiros ganham destaque no topo do nosso feed e push notifications no celular dos residentes.</p>
+                        </div>
+                    </div>
+
+                    {/* CTA FINAL B2B (Estratégico p/ Leitura Prévia) */}
+                    <div className="mt-20 border-t border-white/5 pt-16 text-center">
+                        <h2 className="text-3xl font-bold text-white mb-8">Sua empresa está pronta para a elite?</h2>
+                        <div className="flex flex-col sm:flex-row justify-center gap-4">
+                            <button onClick={() => { setActiveTab('lead'); setIsModalOpen(true); }} className="px-8 py-4 bg-white text-[#142239] font-bold rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-3 text-lg shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:scale-105 active:scale-95">
+                                Quero Construir uma Parceria <ArrowRight size={20} />
+                            </button>
+                            <button onClick={() => { setActiveTab('invite'); setIsModalOpen(true); }} className="px-8 py-4 bg-[#142239] border border-blue-500/30 text-blue-400 font-bold rounded-xl hover:bg-blue-500/10 transition-all flex items-center justify-center gap-3 text-lg shadow-[0_0_40px_rgba(59,130,246,0.1)] hover:scale-105 active:scale-95">
+                                <Key size={20} /> Tenho Código de Convite
+                            </button>
                         </div>
                     </div>
                 </div>
