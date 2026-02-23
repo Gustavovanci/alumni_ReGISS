@@ -41,7 +41,7 @@ export const LandingAlumni = () => {
                             O hub de conexão para <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#D5205D] to-[#FF4B82]">
                                 líderes e futuros líderes
-                            </span> em gestão hospitalar.
+                            </span> em gestão de saúde.
                         </h1>
 
                         <p className="text-lg text-slate-400 max-w-xl leading-relaxed">
