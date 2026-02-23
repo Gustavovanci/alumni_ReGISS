@@ -41,8 +41,8 @@ export const Sidebar = () => {
   return (
     <aside className="fixed left-0 top-0 h-screen w-16 md:w-20 bg-[#142239] border-r border-white/10 flex flex-col items-center py-6 z-40 transition-all">
       <div className="relative mb-8 cursor-pointer mt-2" onClick={() => navigate('/feed')}>
-        <div className="w-10 h-10 bg-gradient-to-br from-[#D5205D] to-[#B32F50] rounded-xl flex items-center justify-center font-bold text-white shadow-[0_0_15px_rgba(213,32,93,0.5)] shrink-0 z-10 relative">
-          R
+        <div className="w-10 h-10 bg-transparent flex items-center justify-center shrink-0 z-10 relative">
+          <img src="/apple-touch-icon.png" alt="ReGISS" className="w-full h-full object-contain drop-shadow-[0_0_10px_rgba(213,32,93,0.5)]" />
         </div>
         {/* Anel Pulsante Verde indicando "Online" na Visão do Próprio Usuário */}
         <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 rounded-full border-2 border-[#142239] shadow-[0_0_8px_rgba(34,197,94,0.8)] z-20"></div>

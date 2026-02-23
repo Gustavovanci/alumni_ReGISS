@@ -227,15 +227,12 @@ export const Feed = () => {
               <FeedSkeleton />
             ) : (
               <>
-                {/* BOAS VINDAS */}
-                <div className={`bg-gradient-to-r ${themeFromClass} to-[#142239] border border-white/10 rounded-3xl p-8 relative overflow-hidden shadow-xl`}>
-                  <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-2"><Star className="text-white w-4 h-4 fill-current" /><span className="text-white/80 text-xs font-bold uppercase tracking-widest">Networking Vivo</span></div>
-                    <h2 className="text-2xl font-bold text-white mb-3">Olá, {profile?.full_name?.split(' ')[0]}.</h2>
-                    <p className="text-white/70 max-w-xl mb-6 text-sm leading-relaxed">Este é o seu hub do ReGISS. Conecte-se com a rede ou busque novas oportunidades baseadas em seus interesses.</p>
-                    <div className="flex flex-wrap gap-3">
-                      <button onClick={() => navigate('/network')} className="px-6 py-3 bg-white text-[#142239] rounded-xl font-bold text-sm transition-all shadow-lg flex items-center gap-2 hover:bg-slate-200"><User size={16} /> Explorar Rede</button>
-                      <button onClick={() => navigate('/jobs')} className="px-6 py-3 bg-black/20 hover:bg-black/30 text-white border border-white/20 rounded-xl font-bold text-sm transition-all flex items-center gap-2"><Briefcase size={16} /> Mural de Vagas</button>
+                {/* BOAS VINDAS SIMPLIFICADO */}
+                <div className={`bg-gradient-to-r ${themeFromClass} to-[#142239] border border-white/10 rounded-3xl p-6 md:p-8 relative overflow-hidden shadow-xl`}>
+                  <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1"><Sparkles className="text-white/80 w-4 h-4" /><span className="text-white/70 text-xs font-bold uppercase tracking-widest">Bem-vindo(a) de volta</span></div>
+                      <h2 className="text-2xl font-bold text-white">Olá, {profile?.full_name?.split(' ')[0]}.</h2>
                     </div>
                   </div>
                 </div>

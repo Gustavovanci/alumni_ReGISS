@@ -94,11 +94,11 @@ export const Events = () => {
 
   const handleDeleteEvent = async (id: string) => {
     if (!window.confirm('Tem certeza que deseja apagar este evento?')) return;
-    
+
     try {
       const { error } = await supabase.from('events').delete().eq('id', id);
       if (error) throw error;
-      
+
       toast.success("Evento apagado com sucesso.");
       setIsModalOpen(false);
       fetchData();
@@ -111,16 +111,16 @@ export const Events = () => {
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) return toast.error("Você precisa estar logado para criar eventos.");
-    
+
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from('events').insert([{ 
-        user_id: currentUser.id, 
-        ...newEvent 
+      const { error } = await supabase.from('events').insert([{
+        user_id: currentUser.id,
+        ...newEvent
       }]);
-      
+
       if (error) throw error;
-      
+
       toast.success("Evento criado com sucesso!");
       setIsModalOpen(false);
       setNewEvent({ title: '', description: '', start_time: '', end_time: '', is_public: false });
@@ -371,7 +371,7 @@ export const Events = () => {
                   className="w-full bg-[#142239] border border-white/10 rounded-2xl p-3.5 text-sm text-white outline-none focus:border-[#D5205D] transition-all placeholder:text-slate-500"
                   value={newEvent.title} onChange={e => setNewEvent({ ...newEvent, title: e.target.value })} required
                 />
-                <div className="flex gap-3">
+                <div className="flex flex-col sm:flex-row gap-3">
                   <div className="flex-1 bg-[#142239] border border-white/10 rounded-2xl p-2.5">
                     <label className="text-[8px] font-bold text-slate-500 uppercase block mb-1 ml-1">Início</label>
                     <input type="datetime-local" className="w-full bg-transparent text-xs text-white outline-none" style={{ colorScheme: 'dark' }} value={newEvent.start_time} onChange={e => setNewEvent({ ...newEvent, start_time: e.target.value })} required />
