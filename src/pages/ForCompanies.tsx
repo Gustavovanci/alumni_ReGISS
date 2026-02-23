@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Link, useNavigate } from 'react-router-dom';
-import { Briefcase, Building, Zap, Users, ArrowRight, CheckCircle2, Target, MessageSquare, Award, ShieldCheck, Key, Lock, Loader2 } from 'lucide-react';
+import { Briefcase, Building, Zap, Users, ArrowRight, CheckCircle2, Target, MessageSquare, Award, ShieldCheck, Key, Lock, Loader2, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const ForCompanies = () => {
     const navigate = useNavigate();
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<'lead' | 'invite'>('lead');
 
     // Estado do Formulário de Lead
@@ -51,6 +52,13 @@ export const ForCompanies = () => {
         } else {
             setSubmitted(true);
             toast.success("Solicitação recebida com sucesso!");
+
+            // Fecha automaticamente o card limpo depois de avisar e zera
+            setTimeout(() => {
+                setIsModalOpen(false);
+                setSubmitted(false);
+                setFormData({ company_name: '', contact_email: '', contact_name: '', hiring_needs: '' });
+            }, 3000);
 
             // Dispara Notificação para o Master Admin
             try {
@@ -135,7 +143,7 @@ export const ForCompanies = () => {
             <div className="absolute top-1/2 right-0 w-[600px] h-[600px] bg-[#D5205D]/10 rounded-full blur-[150px] -z-10 pointer-events-none"></div>
 
             {/* HEADER */}
-            <nav className="w-full border-b border-white/5 bg-[#0a111e]/80 backdrop-blur-xl fixed top-0 z-50">
+            <nav className="w-full border-b border-white/5 bg-[#0a111e]/80 backdrop-blur-xl absolute top-0 z-50">
                 <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <img src="/apple-touch-icon.png" alt="Logo ReGISS" className="w-10 h-10 object-contain rounded-xl shadow-lg shadow-[#D5205D]/20 border border-white/5" />
@@ -162,10 +170,10 @@ export const ForCompanies = () => {
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-4 pt-4">
-                        <button onClick={() => { setActiveTab('lead'); document.getElementById('company-portal')?.scrollIntoView({ behavior: 'smooth' }); }} className="px-8 py-4 bg-white text-[#142239] font-bold rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-3 text-lg shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:scale-105 active:scale-95">
+                        <button onClick={() => { setActiveTab('lead'); setIsModalOpen(true); }} className="px-8 py-4 bg-white text-[#142239] font-bold rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-3 text-lg shadow-[0_0_40px_rgba(255,255,255,0.15)] hover:scale-105 active:scale-95">
                             Quero Construir uma Parceria <ArrowRight size={20} />
                         </button>
-                        <button onClick={() => { setActiveTab('invite'); document.getElementById('company-portal')?.scrollIntoView({ behavior: 'smooth' }); }} className="px-8 py-4 bg-transparent border border-blue-500/30 text-blue-400 font-bold rounded-xl hover:bg-blue-500/10 transition-all flex items-center justify-center gap-3 text-lg shadow-[0_0_40px_rgba(59,130,246,0.1)] hover:scale-105 active:scale-95">
+                        <button onClick={() => { setActiveTab('invite'); setIsModalOpen(true); }} className="px-8 py-4 bg-transparent border border-blue-500/30 text-blue-400 font-bold rounded-xl hover:bg-blue-500/10 transition-all flex items-center justify-center gap-3 text-lg shadow-[0_0_40px_rgba(59,130,246,0.1)] hover:scale-105 active:scale-95">
                             <Key size={20} /> Tenho Código de Convite
                         </button>
                     </div>
@@ -227,10 +235,24 @@ export const ForCompanies = () => {
                 </div>
             </section>
 
-            {/* PORTAL DO PARCEIRO (Abas de Switch) */}
-            <section id="company-portal" className="py-24 relative z-10">
-                <div className="max-w-4xl mx-auto px-6">
-                    <div className="bg-[#15335E] border border-white/10 rounded-[32px] p-8 md:p-12 shadow-2xl relative overflow-hidden">
+            {/* PORTAL DO PARCEIRO (Abas de Switch) COMO MODAL */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0a111e]/90 backdrop-blur-sm p-4 animate-fadeIn">
+                    <div className="bg-[#15335E] border border-white/10 rounded-[32px] p-8 md:p-12 shadow-2xl relative overflow-hidden w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+
+                        {/* Botão Fechar */}
+                        <button
+                            onClick={() => {
+                                setIsModalOpen(false);
+                                setSubmitted(false);
+                                setFormData({ company_name: '', contact_email: '', contact_name: '', hiring_needs: '' });
+                                setInviteStep('validate');
+                            }}
+                            className="absolute top-6 right-6 text-white/50 hover:text-white bg-white/5 hover:bg-white/10 p-2 rounded-full transition-colors z-20"
+                        >
+                            <X size={24} />
+                        </button>
+
                         <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-500 via-[#D5205D] to-amber-500"></div>
 
                         {/* NAV DAS ABAS */}
@@ -359,7 +381,7 @@ export const ForCompanies = () => {
                         )}
                     </div>
                 </div>
-            </section>
+            )}
 
             <footer className="border-t border-white/5 py-8 text-center text-slate-500 text-xs bg-[#0a111e] relative z-10">
                 <p>© {new Date().getFullYear()} Alumni ReGISS HCFMUSP. Portal exclusivo para parceiros corporativos.</p>

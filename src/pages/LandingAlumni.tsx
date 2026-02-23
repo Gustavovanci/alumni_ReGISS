@@ -220,7 +220,7 @@ export const LandingAlumni = () => {
                                 onClick={() => navigate('/para-empresas')}
                                 className="bg-[#15335E] hover:bg-[#1C4177] border border-blue-500/20 shadow-[0_0_15px_rgba(21,51,94,0.5)] text-white px-8 py-4 rounded-xl font-bold text-lg transition-all w-full sm:w-auto text-center"
                             >
-                                Portal de Parceiros
+                                Se torne um parceiro
                             </button>
                         </div>
                     </div>
