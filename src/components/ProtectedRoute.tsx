@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { SplashScreen } from './SplashScreen';
+import { Loader2 } from 'lucide-react';
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
@@ -57,7 +57,11 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   if (loading) {
-    return <SplashScreen />;
+    return (
+      <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#142239]">
+        <Loader2 className="w-12 h-12 text-[#D5205D] animate-spin" />
+      </div>
+    );
   }
 
   if (!isAuthenticated) {
