@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { useStore } from '../store/useStore';
 import { Briefcase, GraduationCap, User, Bell, Star, Send, Sparkles, Shield, Megaphone, X } from 'lucide-react';
 import { getRegissStatus } from '../utils/regissLogic';
 import { PostCard } from '../components/PostCard';
@@ -36,8 +37,8 @@ const FeedSkeleton = () => (
 
 export const Feed = () => {
   const navigate = useNavigate();
+  const { userProfile, feedPosts, setFeedPosts, fetchUserProfile, fetchInitialFeed } = useStore();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [posts, setPosts] = useState<any[]>([]);
   const [suggestedMatches, setSuggestedMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState('');
@@ -59,7 +60,10 @@ export const Feed = () => {
       if (!user) { navigate('/'); return; }
       setCurrentUserId(user.id);
 
-      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+      await fetchUserProfile();
+      await fetchInitialFeed();
+
+      const profileData = useStore.getState().userProfile;
       if (!profileData?.profession) { navigate('/onboarding'); return; }
 
       setProfile(profileData);
@@ -71,18 +75,14 @@ export const Feed = () => {
       const [
         { data: updatesData },
         { count },
-        { data: matches },
-        { data: correctPostsData }
+        { data: matches }
       ] = await Promise.all([
         supabase.from('system_updates').select('*').eq('is_active', true).order('created_at', { ascending: false }),
         supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('read', false),
         (profileData.interests && profileData.interests.length > 0)
           ? supabase.from('profiles').select('id, full_name, profession, interests, avatar_url, entry_year, role').neq('id', user.id).overlaps('interests', profileData.interests).limit(3)
-          : Promise.resolve({ data: [] }),
-        supabase.from('posts').select(`*, profiles(full_name, profession, entry_year, job_title, avatar_url, role)`).eq('type', 'general').order('created_at', { ascending: false }).limit(20)
+          : Promise.resolve({ data: [] })
       ]);
-
-      setPosts(correctPostsData || []);
 
       const savedDismissed = user.user_metadata?.dismissed_updates || JSON.parse(localStorage.getItem('dismissed_updates') || '[]');
       setDismissedUpdates(savedDismissed); // Atualiza o estado da memória Local
@@ -124,13 +124,13 @@ export const Feed = () => {
             .single();
 
           if (newPostWithProfile) {
-            setPosts(currentPosts => [newPostWithProfile, ...currentPosts]);
+            setFeedPosts([newPostWithProfile, ...useStore.getState().feedPosts]);
           }
         }
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, (payload) => {
         // Remove da tela instantaneamente se alguém deletar um post
-        setPosts(currentPosts => currentPosts.filter(post => post.id !== payload.old.id));
+        setFeedPosts(useStore.getState().feedPosts.filter((post: any) => post.id !== payload.old.id));
       })
       .subscribe();
 
@@ -293,7 +293,7 @@ export const Feed = () => {
                       <button onClick={handleCreatePost} disabled={!newPostContent.trim()} className="bg-[#D5205D] hover:bg-pink-600 disabled:opacity-50 disabled:hover:bg-[#D5205D] text-white px-8 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg">Publicar <Send size={16} /></button>
                     </div>
                   </div>
-                  {posts.map(post => <PostCard key={post.id} post={post} currentUserId={currentUserId} />)}
+                  {feedPosts.map(post => <PostCard key={post.id} post={post} currentUserId={currentUserId} />)}
                 </div>
               </>
             )}
