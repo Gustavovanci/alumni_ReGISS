@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
+import { useStore } from '../store/useStore';
 import { Search, Briefcase, MapPin, User, Loader2 } from 'lucide-react';
 import { getRegissStatus } from '../utils/regissLogic';
 
@@ -16,47 +17,33 @@ interface Profile {
 
 export const Network = () => {
   const navigate = useNavigate();
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const { userProfile, fetchUserProfile, allProfiles, fetchAllProfiles } = useStore();
+
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Filtros: TODOS, R1, R2, R+
   const [filter, setFilter] = useState<'TODOS' | 'R1' | 'R2' | 'R+'>('TODOS');
 
   useEffect(() => {
-    fetchNetwork();
-  }, []);
-
-  const fetchNetwork = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .neq('id', user.id) // Garante que você não aparece na própria lista
-        .order('entry_year', { ascending: true }); // Ordena por antiguidade
-
-      if (error) throw error;
-      setProfiles(data || []);
-    } catch (error) {
-      console.error('Erro ao buscar rede:', error);
-    } finally {
+    const loadCache = async () => {
+      await fetchUserProfile();
+      await fetchAllProfiles();
       setLoading(false);
-    }
-  };
+    };
+    loadCache();
+  }, [fetchUserProfile, fetchAllProfiles]);
 
   // Lógica de Filtragem (Busca + Abas)
-  const filteredProfiles = profiles.filter(profile => {
+  const networkProfiles = allProfiles.filter((p: any) => p.id !== userProfile?.uid);
+
+  const filteredProfiles = networkProfiles.filter((profile: any) => {
     const status = profile.role === 'coordination'
       ? { label: 'ÁREA TÉCNICA', color: 'bg-amber-500/20 text-amber-500', defaultRole: 'Coordenação' }
       : getRegissStatus(profile.entry_year || new Date().getFullYear());
 
     // 1. Filtro de Texto (Nome, Profissão ou Interesses)
-    const matchesSearch = profile.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      profile.profession.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      profile.interests?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = profile.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      profile.profession?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      profile.interests?.some((tag: string) => tag.toLowerCase().includes(searchTerm.toLowerCase()));
 
     // 2. Filtro de Aba (R1, R2...)
     const matchesFilter = filter === 'TODOS'
@@ -153,7 +140,7 @@ export const Network = () => {
                   </div>
 
                   <div className="flex flex-wrap gap-2 mb-6 h-14 overflow-hidden content-start">
-                    {profile.interests?.slice(0, 3).map((tag, i) => (
+                    {profile.interests?.slice(0, 3).map((tag: string, i: number) => (
                       <span key={i} className="text-xs bg-[#142239] text-slate-400 px-2 py-1 rounded border border-white/5">{tag}</span>
                     ))}
                     {profile.interests?.length > 3 && (
