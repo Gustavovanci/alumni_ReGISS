@@ -23,6 +23,16 @@ export const Auth = () => {
           });
       }
     });
+
+    // Intercepta Redirecionamentos de Confirmação de E-mail ou Recuperação de Senha
+    const setupAuthListener = () => {
+      supabase.auth.onAuthStateChange(async (event, session) => {
+        if (event === 'SIGNED_IN' && window.location.hash.includes('type=signup')) {
+          toast.success("E-mail confirmado com sucesso! Seja bem-vindo.");
+        }
+      });
+    };
+    setupAuthListener();
   }, [navigate]);
 
   const handleGoogleLogin = async () => {
