@@ -22,13 +22,14 @@ export const Jobs = () => {
       const now = new Date().toISOString();
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Buscar Vagas (Usa maybeSingle/Join protegido)
+      // Buscar Vagas (Usa maybeSingle/Join protegido com limite seguro)
       const { data, error } = await supabase
         .from('posts')
         .select('*, profiles(full_name, entry_year, profession, role)')
         .eq('type', 'vacancy')
         .gt('expires_at', now)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(20);
 
       if (error) throw error;
 

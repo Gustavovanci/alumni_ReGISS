@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Users, Briefcase, Calendar, BarChart3, User, LogOut, Megaphone } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-export const Sidebar = () => {
+export const Sidebar = React.memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
   const [role, setRole] = React.useState('user');
@@ -98,4 +98,4 @@ export const Sidebar = () => {
       </button>
     </aside>
   );
-};
+});

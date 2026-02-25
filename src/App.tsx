@@ -115,6 +115,8 @@ function App() {
   useEffect(() => {
     let isMounted = true;
     const initializeApp = async () => {
+      const startTime = Date.now();
+
       // 1. O Supabase verifica se tem token armazenado
       const { data } = await supabase.auth.getSession();
 
@@ -128,14 +130,17 @@ function App() {
       // 2. Agora sabemos se tem alguem logado, podemos soltar a montagem da cortina de fundo (Routes)
       if (isMounted) setSessionChecked(true);
 
+      const elapsed = Date.now() - startTime;
+
       // 3. Aguarda o tempo natural de animacao e some a Splash se for celular. Se não for, fecha sumariamente.
       if (isMobile) {
+        const remainingDelay = Math.max(1000 - elapsed, 0);
         setTimeout(() => {
           if (isMounted) setIsFading(true);
           setTimeout(() => {
             if (isMounted) setShowSplash(false);
-          }, 700);
-        }, 1500);
+          }, 600);
+        }, remainingDelay);
       } else {
         if (isMounted) setShowSplash(false);
       }

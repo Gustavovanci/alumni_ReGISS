@@ -8,12 +8,28 @@ export const PostCard = ({ post, currentUserId }: { post: any, currentUserId: st
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
 
+  // Otimização de N+1 queries. Baixa likes SOMENTE se passar na tela
+  const [isVisible, setIsVisible] = useState(false);
+  const cardRef = React.useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    if (post.id && currentUserId) {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        setIsVisible(true);
+        observer.disconnect(); // Só precisa buscar uma vez
+      }
+    }, { threshold: 0.1 });
+
+    if (cardRef.current) observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (isVisible && post.id && currentUserId) {
       checkLike();
       fetchLikeCount();
     }
-  }, [post.id, currentUserId]);
+  }, [isVisible, post.id, currentUserId]);
 
   const checkLike = async () => {
     const { data } = await supabase
@@ -62,7 +78,7 @@ export const PostCard = ({ post, currentUserId }: { post: any, currentUserId: st
   const isVacancy = post.type === 'vacancy';
 
   return (
-    <div className={`bg-[#15335E] border-y md:border md:rounded-2xl p-4 md:p-5 shadow-none md:shadow-lg transition-all border-x-0 md:border-x ${isVacancy ? 'border-y-[#D5205D]/30 md:border-[#D5205D]/30' : 'border-y-white/5 md:border-white/5'}`}>
+    <div ref={cardRef} className={`bg-[#15335E] border-y md:border md:rounded-2xl p-4 md:p-5 shadow-none md:shadow-lg transition-all border-x-0 md:border-x ${isVacancy ? 'border-y-[#D5205D]/30 md:border-[#D5205D]/30' : 'border-y-white/5 md:border-white/5'}`}>
       <div className="flex justify-between items-start mb-3">
         <div className="flex gap-3 items-center cursor-pointer group" onClick={() => navigate(`/profile/${post.user_id}`)}>
           <div className="w-10 h-10 bg-[#142239] rounded-full border border-white/10 overflow-hidden shrink-0">

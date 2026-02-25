@@ -41,21 +41,34 @@ export const Events = () => {
 
   const fetchData = async () => {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    setCurrentUser(user);
 
-    const { data: local } = await supabase.from('events').select('*').order('start_time', { ascending: true });
-    setLocalEvents(local || []);
+    try {
+      // Requições Paralelas pra evitar estrangulamento de RTT (Tempo de I/O)
+      const [
+        { data: { user } },
+        { data: local },
+        { data: profiles }
+      ] = await Promise.all([
+        supabase.auth.getUser(),
+        supabase.from('events').select('*').order('start_time', { ascending: true }),
+        supabase.from('profiles').select('full_name, birth_date')
+      ]);
 
-    const { data: profiles } = await supabase.from('profiles').select('full_name, birth_date');
-    if (profiles) {
-      const monthBdays = profiles.filter(p => {
-        if (!p.birth_date) return false;
-        return new Date(p.birth_date).getUTCMonth() === currentDate.getMonth();
-      });
-      setBirthdays(monthBdays);
+      setCurrentUser(user);
+      setLocalEvents(local || []);
+
+      if (profiles) {
+        const monthBdays = profiles.filter(p => {
+          if (!p.birth_date) return false;
+          return new Date(p.birth_date).getUTCMonth() === currentDate.getMonth();
+        });
+        setBirthdays(monthBdays);
+      }
+    } catch (error) {
+      console.error("Erro no Events Fetch:", error);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const getDayDetails = (date: Date) => {

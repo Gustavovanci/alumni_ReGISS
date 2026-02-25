@@ -71,16 +71,17 @@ export const Feed = () => {
       const [
         { data: updatesData },
         { count },
-        { data: matches }
+        { data: matches },
+        { data: correctPostsData }
       ] = await Promise.all([
         supabase.from('system_updates').select('*').eq('is_active', true).order('created_at', { ascending: false }),
         supabase.from('notifications').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('read', false),
         (profileData.interests && profileData.interests.length > 0)
           ? supabase.from('profiles').select('id, full_name, profession, interests, avatar_url, entry_year, role').neq('id', user.id).overlaps('interests', profileData.interests).limit(3)
-          : Promise.resolve({ data: [] })
+          : Promise.resolve({ data: [] }),
+        supabase.from('posts').select(`*, profiles(full_name, profession, entry_year, job_title, avatar_url, role)`).eq('type', 'general').order('created_at', { ascending: false }).limit(20)
       ]);
 
-      const { data: correctPostsData } = await supabase.from('posts').select(`*, profiles(full_name, profession, entry_year, job_title, avatar_url, role)`).eq('type', 'general').order('created_at', { ascending: false });
       setPosts(correctPostsData || []);
 
       const savedDismissed = user.user_metadata?.dismissed_updates || JSON.parse(localStorage.getItem('dismissed_updates') || '[]');

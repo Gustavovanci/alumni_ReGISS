@@ -10,7 +10,7 @@ export const Insights = () => {
 
   useEffect(() => {
     const fetchInsights = async () => {
-      const { data } = await supabase.from('career_journey').select('organization, type, rating, pros, cons, benefits').gt('rating', 0);
+      const { data } = await supabase.from('career_journey').select('organization, type, rating, pros, cons, benefits').gt('rating', 0).limit(500);
       if (!data) return setLoading(false);
 
       const grouped = data.reduce((acc: any, curr: any) => {
