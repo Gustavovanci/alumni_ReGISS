@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Users, Briefcase, Calendar, BarChart3, User, LogOut, Megaphone } from 'lucide-react';
+import { Home, Users, Briefcase, Calendar, BarChart3, User, LogOut, Megaphone, MessageSquare } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export const Sidebar = React.memo(() => {
@@ -16,7 +16,10 @@ export const Sidebar = React.memo(() => {
   const menuItems = [
     ...(role === 'user' || isAdmin ? [{ icon: Home, label: 'Feed', path: '/feed' }] : []),
     ...(role === 'company' || isAdmin ? [{ icon: Briefcase, label: 'Vagas (B2B)', path: '/company' }] : []),
-    ...(['user', 'coordination', 'admin'].includes(role) ? [{ icon: Users, label: 'Rede', path: '/network' }] : []),
+    ...(['user', 'coordination', 'admin'].includes(role) ? [
+      { icon: Users, label: 'Rede', path: '/network' },
+      { icon: MessageSquare, label: 'Fórum', path: '/communities' }
+    ] : []),
     ...(role === 'user' || isAdmin ? [
       { icon: Briefcase, label: 'Vagas', path: '/jobs' },
       { icon: Calendar, label: 'Agenda', path: '/events' },

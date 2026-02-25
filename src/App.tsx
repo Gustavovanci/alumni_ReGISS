@@ -58,6 +58,7 @@ const MyJourney = lazy(() => import('./pages/MyJourney').then(m => ({ default: m
 const Jobs = lazy(() => import('./pages/Jobs').then(m => ({ default: m.Jobs })));
 const Events = lazy(() => import('./pages/Events').then(m => ({ default: m.Events })));
 const Insights = lazy(() => import('./pages/Insights').then(m => ({ default: m.Insights })));
+const Communities = lazy(() => import('./pages/Communities').then(m => ({ default: m.Communities })));
 const UserProfile = lazy(() => import('./pages/UserProfile').then(m => ({ default: m.UserProfile })));
 const Notifications = lazy(() => import('./pages/Notifications').then(m => ({ default: m.Notifications })));
 const Admin = lazy(() => import('./pages/Admin').then(m => ({ default: m.Admin })));
