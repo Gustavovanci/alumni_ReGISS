@@ -204,6 +204,7 @@ function App() {
                 <Route path="/jobs" element={<Jobs />} />
                 <Route path="/events" element={<Events />} />
                 <Route path="/insights" element={<Insights />} />
+                <Route path="/communities" element={<Communities />} />
                 <Route path="/profile/:id" element={<UserProfile />} />
                 <Route path="/notifications" element={<Notifications />} />
                 <Route path="/coordination" element={<Coordination />} />
