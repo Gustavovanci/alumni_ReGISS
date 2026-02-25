@@ -141,7 +141,7 @@ export const Onboarding = () => {
                   <p>O ReGISS Alumni é o seu <strong>hub contínuo de desenvolvimento, networking e inteligência de mercado</strong>.</p>
                   <ul className="list-disc pl-5 space-y-2 text-slate-400">
                     <li>Conecte-se com colegas de diferentes turmas.</li>
-                    <li>Acesse nosso <strong>Mural de Vagas</strong> exclusivo.</li>
+                    <li><strong>Poste vagas para sua rede</strong> e colabore com o nosso Mural.</li>
                     <li>Consulte os <strong>Insights de Mercado</strong> para saber avaliações de hospitais.</li>
                   </ul>
                 </>

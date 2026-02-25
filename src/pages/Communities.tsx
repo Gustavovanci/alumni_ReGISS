@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useStore } from '../store/useStore';
 import { Users, MessageSquare, Search, ArrowLeft, Activity, Pin, Hash, ChevronRight, Plus, X, Loader2, Send } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -26,7 +27,6 @@ const PREDEFINED_COMMUNITIES = [
 ];
 
 export const Communities = () => {
-    const [userProfile, setUserProfile] = useState<any>(null);
     const [communitiesWithRealCounts, setCommunitiesWithRealCounts] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
@@ -49,9 +49,31 @@ export const Communities = () => {
     const [newComment, setNewComment] = useState('');
     const [isSubmittingComment, setIsSubmittingComment] = useState(false);
 
+    const { userProfile, fetchUserProfile, allProfiles, fetchAllProfiles } = useStore();
+
     useEffect(() => {
-        fetchData();
-    }, []);
+        const initData = async () => {
+            await fetchUserProfile();
+            await fetchAllProfiles();
+            setLoading(false);
+        };
+        initData();
+    }, [fetchUserProfile, fetchAllProfiles]);
+
+    useEffect(() => {
+        if (!loading && allProfiles.length > 0) {
+            const calculatedCommunities = PREDEFINED_COMMUNITIES.map(community => {
+                let realCount = 0;
+                if (community.type === 'profession') {
+                    realCount = allProfiles.filter((p: any) => p.profession === community.match_key).length;
+                } else if (community.type === 'class') {
+                    realCount = allProfiles.filter((p: any) => String(p.entry_year) === community.match_key).length;
+                }
+                return { ...community, members: realCount };
+            });
+            setCommunitiesWithRealCounts(calculatedCommunities);
+        }
+    }, [loading, allProfiles]);
 
     useEffect(() => {
         if (selectedPost && !selectedPost.isOfficial) {
@@ -60,34 +82,6 @@ export const Communities = () => {
             setComments([]);
         }
     }, [selectedPost]);
-
-    const fetchData = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        // 1. Pega o perfil autenticado
-        const { data: profile } = await supabase.from('profiles').select('id, profession, entry_year, role').eq('id', user.id).single();
-        if (profile) setUserProfile({ ...profile, uid: user.id });
-
-        // 2. Puxa TODOS os perfis ativos (para exibir o volume Real)
-        const { data: allProfiles } = await supabase.from('profiles').select('profession, entry_year');
-
-        // 3. Cruza os dados
-        const calculatedCommunities = PREDEFINED_COMMUNITIES.map(community => {
-            let realCount = 0;
-            if (allProfiles) {
-                if (community.type === 'profession') {
-                    realCount = allProfiles.filter(p => p.profession === community.match_key).length;
-                } else if (community.type === 'class') {
-                    realCount = allProfiles.filter(p => String(p.entry_year) === community.match_key).length;
-                }
-            }
-            return { ...community, members: realCount };
-        });
-
-        setCommunitiesWithRealCounts(calculatedCommunities);
-        setLoading(false);
-    };
 
     const fetchComments = async () => {
         if (!selectedPost || selectedPost.isOfficial) return;
@@ -147,6 +141,25 @@ export const Communities = () => {
             setNewPostTitle('');
             setNewPostContent('');
             setCommunityPosts(prev => [data, ...prev]);
+
+            // [DISPARO DE NOTIFICAÇÕES GERAIS PARA REDE B2B E ALUNOS]
+            const usersToNotify = allProfiles.filter((p: any) => p.id !== userProfile.uid);
+
+            // Chunking para evitar estourar o limite de insert do Supabase
+            const chunkSize = 100;
+            for (let i = 0; i < usersToNotify.length; i += chunkSize) {
+                const chunk = usersToNotify.slice(i, i + chunkSize);
+                const notificationPayloads = chunk.map((u: any) => ({
+                    user_id: u.id,
+                    type: 'forum_new_topic',
+                    title: `Novo tópico da rede ${selectedCommunity.name}`,
+                    content: `${userProfile.full_name?.split(' ')[0]} criou um novo fórum: "${newPostTitle}". Participe na aba Comunidades!`,
+                    read: false,
+                    target_url: '/communities'
+                }));
+                // Aguarda o chunk rodar de forma síncrona/silenciosa no background
+                supabase.from('notifications').insert(notificationPayloads).then();
+            }
 
         } catch (error: any) {
             console.error(error);
