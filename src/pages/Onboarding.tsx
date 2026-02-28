@@ -53,11 +53,18 @@ export const Onboarding = () => {
       const finalJobTitle = (userRole === 'user' && isResident) ? simulatedStatus?.defaultRole : formData.jobTitle;
       const finalCompany = (userRole === 'user' && isResident) ? 'HCFMUSP' : formData.company;
 
+      // Converte DD/MM/YYYY do front param YYYY-MM-DD do Postgres
+      let formattedBirthDate = formData.birthDate;
+      if (formData.birthDate.includes('/')) {
+        const [day, month, year] = formData.birthDate.split('/');
+        formattedBirthDate = `${year}-${month}-${day}`;
+      }
+
       const { error: profileError } = await supabase.from('profiles').update({
         full_name: formData.fullName,
         profession: formData.profession,
-        entry_year: userRole === 'coordinator' ? null : entryYearInt,
-        birth_date: formData.birthDate,
+        entry_year: entryYearInt,
+        birth_date: formattedBirthDate,
         job_title: finalJobTitle,
         current_company: finalCompany,
         interests: formData.interests,
@@ -166,7 +173,19 @@ export const Onboarding = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">Data de Nascimento</label>
-                    <input type="date" style={{ colorScheme: 'dark' }} value={formData.birthDate} onChange={e => setFormData({ ...formData, birthDate: e.target.value })} className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-blue-500 shadow-inner" />
+                    <input
+                      type="text"
+                      placeholder="DD/MM/AAAA"
+                      maxLength={10}
+                      value={formData.birthDate}
+                      onChange={e => {
+                        let val = e.target.value.replace(/\D/g, '');
+                        if (val.length > 2) val = val.substring(0, 2) + '/' + val.substring(2);
+                        if (val.length > 5) val = val.substring(0, 5) + '/' + val.substring(5, 9);
+                        setFormData({ ...formData, birthDate: val });
+                      }}
+                      className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-[#D5205D] transition-colors shadow-inner"
+                    />
                   </div>
 
                   {userRole === 'user' && (
@@ -187,7 +206,7 @@ export const Onboarding = () => {
                 </div>
 
                 <div className="flex justify-end pt-8">
-                  <button onClick={() => setStep(2)} disabled={!formData.fullName || !formData.birthDate || (userRole === 'user' && !formData.entryYear)} className={`px-8 py-3.5 rounded-xl font-bold transition-all flex items-center gap-2 disabled:opacity-50 text-white shadow-lg ${userRole === 'coordinator' ? 'bg-[#9D4EDD] hover:bg-purple-600' : 'bg-[#D5205D] hover:bg-pink-600'}`}>Continuar <ChevronRight size={18} /></button>
+                  <button onClick={() => setStep(2)} disabled={!formData.fullName || formData.birthDate.length !== 10 || (userRole === 'user' && !formData.entryYear)} className={`px-8 py-3.5 rounded-xl font-bold transition-all flex items-center gap-2 disabled:opacity-50 text-white shadow-lg ${userRole === 'coordinator' ? 'bg-[#9D4EDD] hover:bg-purple-600' : 'bg-[#D5205D] hover:bg-pink-600'}`}>Continuar <ChevronRight size={18} /></button>
                 </div>
               </div>
             )}
