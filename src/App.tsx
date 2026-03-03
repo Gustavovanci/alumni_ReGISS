@@ -49,20 +49,19 @@ import { Auth } from './pages/Auth';
 import { LandingAlumni } from './pages/LandingAlumni';
 import { ForCompanies } from './pages/ForCompanies';
 
-// Internas (Páginas Pesadas carregadas sob demanda)
-const Onboarding = lazy(() => import('./pages/Onboarding').then(m => ({ default: m.Onboarding })));
-const Coordination = lazy(() => import('./pages/Coordination').then(m => ({ default: m.Coordination })));
-const Feed = lazy(() => import('./pages/Feed').then(m => ({ default: m.Feed })));
-const Network = lazy(() => import('./pages/Network').then(m => ({ default: m.Network })));
-const MyJourney = lazy(() => import('./pages/MyJourney').then(m => ({ default: m.MyJourney })));
-const Jobs = lazy(() => import('./pages/Jobs').then(m => ({ default: m.Jobs })));
-const Events = lazy(() => import('./pages/Events').then(m => ({ default: m.Events })));
-const Insights = lazy(() => import('./pages/Insights').then(m => ({ default: m.Insights })));
-const Communities = lazy(() => import('./pages/Communities').then(m => ({ default: m.Communities })));
-const UserProfile = lazy(() => import('./pages/UserProfile').then(m => ({ default: m.UserProfile })));
-const Notifications = lazy(() => import('./pages/Notifications').then(m => ({ default: m.Notifications })));
-const Admin = lazy(() => import('./pages/Admin').then(m => ({ default: m.Admin })));
-const CompanyDashboard = lazy(() => import('./pages/CompanyDashboard').then(m => ({ default: m.CompanyDashboard })));
+import { Onboarding } from './pages/Onboarding';
+import { Coordination } from './pages/Coordination';
+import { Feed } from './pages/Feed';
+import { Network } from './pages/Network';
+import { MyJourney } from './pages/MyJourney';
+import { Jobs } from './pages/Jobs';
+import { Events } from './pages/Events';
+import { Insights } from './pages/Insights';
+import { Communities } from './pages/Communities';
+import { UserProfile } from './pages/UserProfile';
+import { Notifications } from './pages/Notifications';
+import { Admin } from './pages/Admin';
+import { CompanyDashboard } from './pages/CompanyDashboard';
 
 // Loading Secundário Discreto
 const GentleLoader = () => (
@@ -82,9 +81,7 @@ const SocialLayout = () => (
       <PresenceTracker />
       <Sidebar />
       <div className="pl-16 md:pl-20 min-h-screen relative">
-        <Suspense fallback={<GentleLoader />}>
-          <Outlet />
-        </Suspense>
+        <Outlet />
       </div>
       <GlobalFAB />
     </div>
@@ -96,9 +93,7 @@ const AdminLayout = () => (
   <ProtectedRoute>
     <div className="min-h-screen bg-[#0B1320] text-slate-100 font-sans selection:bg-[#D5205D]/30">
       <PresenceTracker />
-      <Suspense fallback={<GentleLoader />}>
-        <Outlet />
-      </Suspense>
+      <Outlet />
     </div>
   </ProtectedRoute>
 );
