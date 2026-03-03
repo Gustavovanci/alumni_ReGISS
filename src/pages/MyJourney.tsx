@@ -19,7 +19,6 @@ export const MyJourney = () => {
   const [interests, setInterests] = useState<string[]>([]);
   const [newInterest, setNewInterest] = useState('');
   const [whatsapp, setWhatsapp] = useState('');
-  const [authWhats, setAuthWhats] = useState(false);
 
   // Estados de Segurança (Senha)
   const [newPassword, setNewPassword] = useState('');
@@ -50,7 +49,6 @@ export const MyJourney = () => {
       setThemeColor(profile.theme_color || 'regiss-magenta');
       setInterests(profile.interests || []);
       setWhatsapp(profile.whatsapp || '');
-      setAuthWhats(profile.whatsapp_authorized || false);
     }
 
     const { data: journey } = await supabase.from('career_journey').select('*').eq('user_id', user.id).order('start_date', { ascending: false });
@@ -83,7 +81,7 @@ export const MyJourney = () => {
 
     const { error } = await supabase.from('profiles').update({
       full_name: fullName.trim(), // Salva o nome atualizado
-      bio, linkedin_url: linkedin, avatar_url: avatarUrl, theme_color: themeColor, interests, whatsapp, whatsapp_authorized: authWhats
+      bio, linkedin_url: linkedin, avatar_url: avatarUrl, theme_color: themeColor, interests, whatsapp, whatsapp_authorized: !!whatsapp
     }).eq('id', user.id);
 
     if (error) alert('Erro ao salvar o perfil'); else { alert('Perfil atualizado com sucesso!'); navigate('/feed'); }
@@ -205,10 +203,6 @@ export const MyJourney = () => {
                 <label className="text-xs font-bold text-slate-400 uppercase">Número do WhatsApp</label>
                 <input type="text" value={whatsapp} onChange={e => setWhatsapp(e.target.value)} placeholder="(11) 99999-9999" className="w-full bg-[#142239] border border-white/10 rounded-xl p-3 text-white outline-none focus:border-[#D5205D]" />
               </div>
-              <label className="flex items-center gap-3 cursor-pointer p-3 bg-[#142239] rounded-xl border border-white/5 hover:border-white/10 transition-colors">
-                <input type="checkbox" checked={authWhats} onChange={e => setAuthWhats(e.target.checked)} className="w-4 h-4 accent-[#25D366] rounded" />
-                <span className="text-sm text-slate-300">Exibir botão de WhatsApp no meu perfil</span>
-              </label>
             </div>
           </div>
 
