@@ -4,6 +4,27 @@ import { ExternalLink, Plus, Building, MapPin, Briefcase, Clock, Calendar, Check
 import { getRegissStatus } from '../utils/regissLogic';
 import { toast } from 'sonner';
 
+const JobSkeleton = () => (
+  <div className="space-y-4">
+    {[1, 2, 3].map(i => (
+      <div key={i} className="bg-[#15335E] rounded-3xl p-6 md:p-8 border border-white/5 animate-pulse">
+        <div className="flex justify-between items-start mb-6">
+          <div>
+            <div className="h-6 bg-white/10 rounded w-48 mb-3"></div>
+            <div className="h-4 bg-white/5 rounded w-32"></div>
+          </div>
+          <div className="w-12 h-12 bg-white/10 rounded-2xl shrink-0"></div>
+        </div>
+        <div className="flex gap-4 mb-6">
+          <div className="h-8 bg-white/5 rounded-full w-24"></div>
+          <div className="h-8 bg-white/5 rounded-full w-24"></div>
+        </div>
+        <div className="h-12 bg-white/10 rounded-xl w-full sm:w-48 mt-4"></div>
+      </div>
+    ))}
+  </div>
+);
+
 export const Jobs = () => {
   const [jobs, setJobs] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
@@ -229,7 +250,7 @@ export const Jobs = () => {
 
         {/* LISTA DE VAGAS */}
         {loading ? (
-          <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 text-[#D5205D] animate-spin" /></div>
+          <JobSkeleton />
         ) : jobs.length === 0 ? (
           <div className="text-center py-20 border border-white/5 border-dashed rounded-3xl bg-[#15335E]/50">
             <Briefcase size={48} className="mx-auto text-slate-600 mb-4 opacity-50" />

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bell, Check, Heart, MessageCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, Bell, Check, Heart, MessageCircle, Loader2, Trash2, Pin } from 'lucide-react';
+import { toast } from 'sonner';
 
 export const Notifications = () => {
   const navigate = useNavigate();
@@ -34,6 +35,31 @@ export const Notifications = () => {
     await supabase.from('notifications').update({ read: true }).eq('user_id', user.id).eq('read', false);
   };
 
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    try {
+      const { error } = await supabase.from('notifications').delete().eq('id', id);
+      if (error) throw error;
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      toast.success("Notificação apagada.");
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Erro ao apagar notificação.");
+    }
+  };
+
+  const getIconForType = (type: string) => {
+    if (type === 'new_like') return <Heart size={16} />;
+    if (type === 'forum_new_topic') return <Pin size={16} />;
+    return <MessageCircle size={16} />;
+  };
+
+  const getColorForType = (type: string) => {
+    if (type === 'new_like') return 'bg-rose-500/10 text-rose-500';
+    if (type === 'forum_new_topic') return 'bg-amber-500/10 text-amber-500';
+    return 'bg-blue-500/10 text-blue-400';
+  };
+
   // Formata data
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
@@ -59,17 +85,30 @@ export const Notifications = () => {
         ) : (
           <div className="space-y-3">
             {notifications.map(notif => (
-              <div key={notif.id} className={`p-4 rounded-xl flex gap-4 items-start border ${notif.read ? 'bg-slate-900 border-transparent' : 'bg-regiss-blue/10 border-regiss-midBlue/30'}`}>
-                <div className={`mt-1 p-2 rounded-full shrink-0 ${notif.type === 'like' ? 'bg-rose-500/10 text-rose-500' : 'bg-blue-500/10 text-blue-400'}`}>
-                  {notif.type === 'like' ? <Heart size={16} /> : <MessageCircle size={16} />}
+              <div
+                key={notif.id}
+                onClick={() => { if (notif.target_url) navigate(notif.target_url) }}
+                className={`p-4 rounded-xl flex gap-4 items-start border cursor-pointer hover:border-white/20 transition-all group ${notif.read ? 'bg-[#142239] border-white/5' : 'bg-regiss-blue/10 border-regiss-midBlue/50'}`}
+              >
+                <div className={`mt-1 p-2 rounded-full shrink-0 ${getColorForType(notif.type)}`}>
+                  {getIconForType(notif.type)}
                 </div>
 
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-sm text-slate-200">
-                    <span className="font-bold text-white">{notif.profiles?.full_name || 'Usuário Deletado'}</span> {notif.content}
+                    <span className="font-bold text-white block mb-0.5">{notif.title}</span>
+                    {notif.content}
                   </p>
                   <p className="text-xs text-slate-500 mt-1">{formatDate(notif.created_at)}</p>
                 </div>
+
+                <button
+                  onClick={(e) => handleDelete(e, notif.id)}
+                  className="text-slate-500 hover:text-red-400 p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity rounded-lg shrink-0"
+                  title="Apagar Notificação"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
             ))}
           </div>

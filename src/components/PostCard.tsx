@@ -2,9 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Heart, Trash2, MessageCircle, Send, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useStore } from '../store/useStore';
 
 export const PostCard = ({ post, currentUserId }: { post: any, currentUserId: string }) => {
   const navigate = useNavigate();
+  const { userProfile } = useStore();
   const [isLiked, setIsLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
 
@@ -93,9 +95,20 @@ export const PostCard = ({ post, currentUserId }: { post: any, currentUserId: st
       const { data, error } = await supabase
         .from('post_comments')
         .insert({ post_id: post.id, user_id: currentUserId, content: newComment })
-        .select('*, profiles(full_name, avatar_url)').single();
-
       if (error) throw error;
+
+      // DISPARO DE NOTIFICAÇÃO (Comentário) - Se não for o próprio dono
+      if (post.user_id && post.user_id !== currentUserId) {
+        const userName = userProfile?.full_name?.split(' ')[0] || 'Alguém';
+        await supabase.from('notifications').insert({
+          user_id: post.user_id,
+          type: 'new_comment',
+          title: 'Novo Comentário',
+          content: `${userName} comentou no seu post: "${newComment.substring(0, 30)}${newComment.length > 30 ? '...' : ''}"`,
+          read: false,
+          target_url: `/feed`
+        }).then();
+      }
 
       setComments([...comments, data]);
       setCommentsCount(prev => prev + 1);
@@ -137,6 +150,19 @@ export const PostCard = ({ post, currentUserId }: { post: any, currentUserId: st
       } else {
         const { error } = await supabase.from('likes').insert({ post_id: post.id, user_id: currentUserId });
         if (error) throw error;
+
+        // DISPARO DE NOTIFICAÇÃO (Like) - Se não for o próprio dono
+        if (post.user_id && post.user_id !== currentUserId) {
+          const userName = userProfile?.full_name?.split(' ')[0] || 'Alguém';
+          await supabase.from('notifications').insert({
+            user_id: post.user_id,
+            type: 'new_like',
+            title: 'Nova Curtida',
+            content: `${userName} curtiu sua publicação.`,
+            read: false,
+            target_url: `/feed`
+          }).then(); // Fire and forget
+        }
       }
     } catch (error) {
       // Se deu erro, reverte as mudanças

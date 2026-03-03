@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
-import { Search, Briefcase, MapPin, User, Loader2 } from 'lucide-react';
+import { Search, Briefcase, MapPin, User } from 'lucide-react';
 import { getRegissStatus } from '../utils/regissLogic';
 
 interface Profile {
@@ -14,6 +14,27 @@ interface Profile {
   interests: string[];
   role?: string;
 }
+
+const NetworkSkeleton = () => (
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
+    {[1, 2, 3, 4, 5, 6].map(i => (
+      <div key={i} className="bg-[#15335E] rounded-3xl p-6 border border-white/5 h-64 flex flex-col">
+        <div className="flex items-start gap-4 mb-4">
+          <div className="w-16 h-16 rounded-full bg-white/10 shrink-0"></div>
+          <div className="flex-1 space-y-2 mt-2">
+            <div className="h-4 bg-white/10 rounded w-3/4"></div>
+            <div className="h-3 bg-white/5 rounded w-1/2"></div>
+          </div>
+        </div>
+        <div className="space-y-3 flex-1 mt-4">
+          <div className="h-3 bg-white/5 rounded w-full"></div>
+          <div className="h-3 bg-white/5 rounded w-2/3"></div>
+        </div>
+        <div className="h-10 bg-white/10 rounded-2xl w-full mt-4"></div>
+      </div>
+    ))}
+  </div>
+);
 
 export const Network = () => {
   const navigate = useNavigate();
@@ -100,7 +121,7 @@ export const Network = () => {
 
         {/* GRID DE RESULTADOS */}
         {loading ? (
-          <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 text-[#D5205D] animate-spin" /></div>
+          <NetworkSkeleton />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProfiles.slice(0, visibleCount).map(profile => {

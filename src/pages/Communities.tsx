@@ -213,6 +213,19 @@ export const Communities = () => {
 
             if (error) throw error;
 
+            // DISPARO DE NOTIFICAÇÃO (Comentário em Fórum) - Avisar o autor do tópico, se não for ele mesmo
+            if (selectedPost.user_id && selectedPost.user_id !== userProfile.uid) {
+                const userName = userProfile?.full_name?.split(' ')[0] || 'Alguém';
+                await supabase.from('notifications').insert({
+                    user_id: selectedPost.user_id,
+                    type: 'forum_comment',
+                    title: 'Resposta no seu Tópico',
+                    content: `${userName} respondeu no fórum: "${newComment.substring(0, 30)}${newComment.length > 30 ? '...' : ''}"`,
+                    read: false,
+                    target_url: `/communities`
+                }).then(); // Fire and forget
+            }
+
             setComments(prev => [...prev, data]);
             setNewComment('');
             toast.success('Resposta enviada!');
