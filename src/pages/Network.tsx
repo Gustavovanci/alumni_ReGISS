@@ -22,6 +22,7 @@ export const Network = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState<'TODOS' | 'R1' | 'R2' | 'R+'>('TODOS');
+  const [visibleCount, setVisibleCount] = useState(12);
 
   useEffect(() => {
     const loadCache = async () => {
@@ -55,6 +56,11 @@ export const Network = () => {
     return matchesSearch && matchesFilter;
   });
 
+  // Reseta a paginação ao digitar ou mudar aba
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [searchTerm, filter]);
+
   return (
     <div className="min-h-screen bg-[#142239] text-slate-100 font-sans p-4 md:p-8 pb-24">
       <div className="max-w-7xl mx-auto">
@@ -63,7 +69,7 @@ export const Network = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white">Rede <span className="text-[#D5205D]">ReGISS</span></h1>
-            <p className="text-slate-400 text-sm mt-1">Conecte-se com alunos e ex-alunos da instituição ({filteredProfiles.length} conexões)</p>
+            <p className="text-slate-400 text-sm mt-1">Conecte-se com alunos e ex-alunos da instituição ({filteredProfiles.length} encontrados)</p>
           </div>
 
           <div className="flex bg-[#15335E] p-1.5 rounded-2xl border border-white/5 shadow-lg overflow-x-auto w-full md:w-auto snap-x snap-mandatory hide-scrollbar gap-1">
@@ -97,7 +103,7 @@ export const Network = () => {
           <div className="flex justify-center py-20"><Loader2 className="w-10 h-10 text-[#D5205D] animate-spin" /></div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredProfiles.map(profile => {
+            {filteredProfiles.slice(0, visibleCount).map(profile => {
               const status = profile.role === 'coordination'
                 ? { label: 'ÁREA TÉCNICA', color: 'bg-amber-500/20 text-amber-500', defaultRole: 'Coordenação', border: 'border-amber-500/30' }
                 : getRegissStatus(profile.entry_year || new Date().getFullYear());
@@ -108,9 +114,9 @@ export const Network = () => {
                   : status.label === 'R2' ? 'border-blue-500/30 hover:border-blue-500/60' : 'border-[#D5205D]/30 hover:border-[#D5205D]/60';
 
               return (
-                <div key={profile.id} className={`bg-[#15335E] rounded-3xl p-6 border ${borderStyle} transition-all group relative overflow-hidden`}>
+                <div key={profile.id} className={`bg-[#15335E] rounded-3xl p-6 border ${borderStyle} transition-all group relative overflow-hidden flex flex-col h-full`}>
 
-                  <div className={`absolute top-4 right-4 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider ${status.color}`}>
+                  <div className={`absolute top-4 right-4 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider ${status.color} z-10`}>
                     {status.label}
                   </div>
 
@@ -118,7 +124,8 @@ export const Network = () => {
                     <div className="w-16 h-16 rounded-full bg-[#142239] border-2 border-white/10 flex items-center justify-center text-xl font-bold text-slate-400 shrink-0 uppercase overflow-hidden">
                       {profile.full_name.charAt(0)}
                     </div>
-                    <div className="flex-1 min-w-0">
+                    {/* Padding right de 20 para o texto não invadir o espaço absoluto direito da Badge */}
+                    <div className="flex-1 min-w-0 pr-20">
                       <h3 className="font-bold text-white text-lg leading-tight group-hover:text-[#D5205D] transition-colors truncate">
                         {profile.full_name}
                       </h3>
@@ -128,7 +135,7 @@ export const Network = () => {
                     </div>
                   </div>
 
-                  <div className="space-y-2 mb-6">
+                  <div className="space-y-2 mb-6 flex-1">
                     <div className="flex items-center gap-2 text-sm text-slate-300">
                       <Briefcase size={14} className="text-slate-500 shrink-0" />
                       <span className="truncate">{profile.job_title || status.defaultRole || 'Cargo não informado'}</span>
@@ -141,7 +148,7 @@ export const Network = () => {
 
                   <div className="flex flex-wrap gap-2 mb-6 h-14 overflow-hidden content-start">
                     {profile.interests?.slice(0, 3).map((tag: string, i: number) => (
-                      <span key={i} className="text-xs bg-[#142239] text-slate-400 px-2 py-1 rounded border border-white/5">{tag}</span>
+                      <span key={i} className="text-xs bg-[#142239] text-slate-400 px-2 py-1 rounded border border-white/5 truncate max-w-[100px]">{tag}</span>
                     ))}
                     {profile.interests?.length > 3 && (
                       <span className="text-xs text-slate-500 py-1 font-bold">+{profile.interests.length - 3}</span>
@@ -150,13 +157,24 @@ export const Network = () => {
 
                   <button
                     onClick={() => navigate(`/profile/${profile.id}`)}
-                    className="w-full py-3 bg-[#142239] hover:bg-[#D5205D] hover:border-[#D5205D] text-white rounded-xl font-bold text-sm transition-colors border border-white/10 flex items-center justify-center gap-2 shadow-lg"
+                    className="w-full py-3 bg-[#142239] hover:bg-[#D5205D] hover:border-[#D5205D] text-white rounded-xl font-bold text-sm transition-colors border border-white/10 flex items-center justify-center gap-2 shadow-lg mt-auto cursor-pointer relative z-20"
                   >
                     <User size={16} /> Ver Perfil Completo
                   </button>
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {!loading && visibleCount < filteredProfiles.length && (
+          <div className="flex justify-center mt-8">
+            <button
+              onClick={() => setVisibleCount(prev => prev + 12)}
+              className="px-8 py-3 bg-white/5 hover:bg-white/10 text-white rounded-xl font-bold text-sm transition-colors border border-white/10"
+            >
+              Carregar Mais
+            </button>
           </div>
         )}
 
