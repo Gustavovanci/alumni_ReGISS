@@ -50,7 +50,7 @@ export const Network = () => {
     const matchesFilter = filter === 'TODOS'
       ? true
       : filter === 'R+'
-        ? status.label.includes('R+')
+        ? status.label.includes('R+') || status.label.includes('Alumni') || (profile.entry_year && profile.entry_year < (new Date().getMonth() >= 2 ? new Date().getFullYear() : new Date().getFullYear() - 1) - 1)
         : status.label === filter;
 
     return matchesSearch && matchesFilter;

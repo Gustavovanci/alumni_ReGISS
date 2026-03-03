@@ -26,6 +26,7 @@ export const Events = () => {
   const [newEvent, setNewEvent] = useState({
     title: '', description: '', start_time: '', end_time: '', is_public: false
   });
+  const [showEventForm, setShowEventForm] = useState(false);
 
   const holidays = getHolidays(currentDate.getFullYear());
   const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -72,10 +73,15 @@ export const Events = () => {
   };
 
   const getDayDetails = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    // Para evitar fuso horário de servidor UTC transformando os dias, fixamos string base local
+    const dateStr = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().split('T')[0];
+
+    // Convertemos holidays dateStr tb
     const dayHolidays = holidays.filter(h => h.date === dateStr);
-    const dayBirthdays = birthdays.filter(p => new Date(p.birth_date).getUTCDate() === date.getDate());
-    const events = localEvents.filter(e => new Date(e.start_time).toDateString() === date.toDateString());
+    const dayBirthdays = birthdays.filter(p => p.birth_date && new Date(p.birth_date).getUTCDate() === date.getDate());
+
+    // Filter seguro comparando startsWith('YYYY-MM-DD')
+    const events = localEvents.filter(e => e.start_time.startsWith(dateStr));
     return { dayHolidays, dayBirthdays, events };
   };
 
@@ -102,6 +108,8 @@ export const Events = () => {
 
     setSelectedDate(date);
     setSelectedDateEvents(events);
+    // Se não tiver nenhum evento hoje, podemos abrir já pronto pro form, senão mostra a lista primeiro.
+    setShowEventForm(events.length === 0);
     setIsModalOpen(true);
   };
 
@@ -136,6 +144,7 @@ export const Events = () => {
 
       toast.success("Evento criado com sucesso!");
       setIsModalOpen(false);
+      setShowEventForm(false);
       setNewEvent({ title: '', description: '', start_time: '', end_time: '', is_public: false });
       fetchData();
     } catch (error: any) {
@@ -361,51 +370,67 @@ export const Events = () => {
             </div>
 
             <div className="p-5">
-              {selectedDateEvents.length > 0 && (
-                <div className="mb-5 space-y-2">
-                  {selectedDateEvents.map((ev, i) => (
-                    <div key={i} className="bg-[#142239] p-3 rounded-2xl border border-white/5 flex items-center justify-between group">
-                      <div className="flex items-center gap-3">
-                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                        <div>
-                          <p className="font-bold text-xs text-white leading-tight">{ev.title}</p>
-                          <p className="text-[9px] text-slate-400">{new Date(ev.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+              {!showEventForm && selectedDateEvents.length > 0 ? (
+                <>
+                  <div className="mb-5 space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
+                    {selectedDateEvents.map((ev, i) => (
+                      <div key={i} className="bg-[#142239] p-4 rounded-2xl border border-white/5 flex items-center justify-between group shadow-sm transition-all hover:border-white/10">
+                        <div className="flex items-start gap-3">
+                          <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${ev.is_public ? 'bg-[#D5205D]' : 'bg-blue-500'}`}></div>
+                          <div>
+                            <p className="font-bold text-sm text-white leading-tight mb-1">{ev.title}</p>
+                            <p className="text-[10px] text-slate-400 font-medium">
+                              {new Date(ev.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} às {new Date(ev.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • {ev.is_public ? 'Público' : 'Privado'}
+                            </p>
+                          </div>
                         </div>
+                        {currentUser?.id === ev.user_id && (
+                          <button onClick={() => handleDeleteEvent(ev.id)} className="text-slate-500 hover:text-red-400 p-2 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all bg-white/5 sm:bg-transparent">
+                            <Trash2 size={16} />
+                          </button>
+                        )}
                       </div>
-                      {currentUser?.id === ev.user_id && (
-                        <button onClick={() => handleDeleteEvent(ev.id)} className="text-slate-500 hover:text-red-400 p-2 rounded-lg opacity-0 group-hover:opacity-100 transition-all">
-                          <Trash2 size={14} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                  </div>
+                  <button onClick={() => setShowEventForm(true)} className="w-full flex justify-center items-center gap-2 bg-[#142239] hover:bg-white/5 text-slate-300 hover:text-white border border-white/5 border-dashed font-bold py-3.5 rounded-2xl shadow-lg transition-all text-sm mb-2">
+                    <Plus size={16} /> Adicionar Novo Evento
+                  </button>
+                </>
+              ) : (
+                <form onSubmit={handleCreateEvent} className="space-y-4 animate-fadeIn">
+                  {selectedDateEvents.length > 0 && (
+                    <button type="button" onClick={() => setShowEventForm(false)} className="text-xs text-[#D5205D] font-bold hover:underline mb-2 flex items-center gap-1">
+                      <ChevronLeft size={14} /> Voltar para a Lista de Eventos
+                    </button>
+                  )}
 
-              <form onSubmit={handleCreateEvent} className="space-y-4">
-                <input
-                  type="text" placeholder="Adicionar título"
-                  className="w-full bg-[#142239] border border-white/10 rounded-2xl p-3.5 text-sm text-white outline-none focus:border-[#D5205D] transition-all placeholder:text-slate-500"
-                  value={newEvent.title} onChange={e => setNewEvent({ ...newEvent, title: e.target.value })} required
-                />
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <div className="flex-1 bg-[#142239] border border-white/10 rounded-2xl p-2.5">
-                    <label className="text-[8px] font-bold text-slate-500 uppercase block mb-1 ml-1">Início</label>
-                    <input type="datetime-local" className="w-full bg-transparent text-xs text-white outline-none" style={{ colorScheme: 'dark' }} value={newEvent.start_time} onChange={e => setNewEvent({ ...newEvent, start_time: e.target.value })} required />
+                  <input
+                    type="text" placeholder="Adicionar título"
+                    className="w-full bg-[#142239] border border-white/10 rounded-2xl p-3.5 text-sm text-white outline-none focus:border-[#D5205D] transition-all placeholder:text-slate-500 shadow-inner"
+                    value={newEvent.title} onChange={e => setNewEvent({ ...newEvent, title: e.target.value })} required
+                  />
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <div className="flex-1 bg-[#142239] border border-white/10 rounded-2xl p-3 shadow-inner">
+                      <label className="text-[8px] font-bold text-slate-500 uppercase block mb-1.5 ml-1">Início</label>
+                      <input type="datetime-local" className="w-full bg-transparent text-xs text-white outline-none cursor-pointer" style={{ colorScheme: 'dark' }} value={newEvent.start_time} onChange={e => setNewEvent({ ...newEvent, start_time: e.target.value })} required />
+                    </div>
+                    <div className="flex-1 bg-[#142239] border border-white/10 rounded-2xl p-3 shadow-inner">
+                      <label className="text-[8px] font-bold text-slate-500 uppercase block mb-1.5 ml-1">Fim</label>
+                      <input type="datetime-local" className="w-full bg-transparent text-xs text-white outline-none cursor-pointer" style={{ colorScheme: 'dark' }} value={newEvent.end_time} onChange={e => setNewEvent({ ...newEvent, end_time: e.target.value })} required />
+                    </div>
                   </div>
-                  <div className="flex-1 bg-[#142239] border border-white/10 rounded-2xl p-2.5">
-                    <label className="text-[8px] font-bold text-slate-500 uppercase block mb-1 ml-1">Fim</label>
-                    <input type="datetime-local" className="w-full bg-transparent text-xs text-white outline-none" style={{ colorScheme: 'dark' }} value={newEvent.end_time} onChange={e => setNewEvent({ ...newEvent, end_time: e.target.value })} required />
+
+                  <div className="flex gap-2 p-1 bg-[#142239] rounded-2xl border border-white/5 shadow-inner">
+                    <button type="button" onClick={() => setNewEvent({ ...newEvent, is_public: false })} className={`flex-1 py-3 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 ${!newEvent.is_public ? 'bg-[#15335E] text-white shadow-md border border-white/10' : 'text-slate-500 bg-transparent'}`}><Lock size={12} /> Privado (Só Você)</button>
+                    <button type="button" onClick={() => setNewEvent({ ...newEvent, is_public: true })} className={`flex-1 py-3 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 ${newEvent.is_public ? 'bg-[#D5205D] text-white shadow-md border border-[#D5205D]' : 'text-slate-500 bg-transparent'}`}><Globe size={12} /> Público (Rede)</button>
                   </div>
-                </div>
-                <div className="flex gap-2">
-                  <button type="button" onClick={() => setNewEvent({ ...newEvent, is_public: false })} className={`flex-1 py-2.5 rounded-xl border text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 ${!newEvent.is_public ? 'bg-white text-[#142239] border-white' : 'text-slate-400 border-white/10 bg-transparent'}`}><Lock size={12} /> Privado</button>
-                  <button type="button" onClick={() => setNewEvent({ ...newEvent, is_public: true })} className={`flex-1 py-2.5 rounded-xl border text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 ${newEvent.is_public ? 'bg-[#D5205D] text-white border-[#D5205D]' : 'text-slate-400 border-white/10 bg-transparent'}`}><Globe size={12} /> Público</button>
-                </div>
-                <button type="submit" disabled={isSubmitting} className="w-full flex justify-center items-center gap-2 bg-[#D5205D] text-white font-bold py-3.5 rounded-2xl mt-2 shadow-lg hover:bg-pink-600 transition-all text-sm disabled:opacity-50">
-                  {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : 'Salvar'}
-                </button>
-              </form>
+
+                  <button type="submit" disabled={isSubmitting} className="w-full flex justify-center items-center gap-2 bg-[#D5205D] text-white font-bold py-4 rounded-2xl mt-4 shadow-lg hover:bg-pink-600 transition-all text-sm disabled:opacity-50">
+                    {isSubmitting ? <Loader2 size={16} className="animate-spin" /> : 'Salvar Evento'}
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         </div>

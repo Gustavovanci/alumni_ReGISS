@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
-import { Users, MessageSquare, Search, ArrowLeft, Activity, Pin, Hash, ChevronRight, Plus, X, Loader2, Send } from 'lucide-react';
+import { Users, MessageSquare, Search, ArrowLeft, Activity, Pin, Hash, ChevronRight, Plus, X, Loader2, Send, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 // ==========================================
@@ -59,6 +59,37 @@ export const Communities = () => {
         };
         initData();
     }, [fetchUserProfile, fetchAllProfiles]);
+
+    // WebSocket de Comunidade (Realtime Tópicos)
+    useEffect(() => {
+        if (!selectedCommunity) return;
+        const channel = supabase.channel(`community_${selectedCommunity.id}`)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'community_posts', filter: `community_id=eq.${selectedCommunity.id}` }, async (payload) => {
+                const { data } = await supabase.from('community_posts').select('*, profiles(full_name, role)').eq('id', payload.new.id).single();
+                if (data) setCommunityPosts(prev => prev.find(p => p.id === data.id) ? prev : [data, ...prev]);
+            })
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'community_posts', filter: `community_id=eq.${selectedCommunity.id}` }, (payload) => {
+                setCommunityPosts(prev => prev.filter(p => p.id !== payload.old.id));
+                setSelectedPost((curr: any) => curr?.id === payload.old.id ? null : curr);
+            })
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [selectedCommunity]);
+
+    // WebSocket de Post Oficial / Fórum (Realtime Comentários)
+    useEffect(() => {
+        if (!selectedPost || selectedPost.isOfficial) return;
+        const channel = supabase.channel(`post_${selectedPost.id}`)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'community_comments', filter: `post_id=eq.${selectedPost.id}` }, async (payload) => {
+                const { data } = await supabase.from('community_comments').select('*, profiles(full_name, role)').eq('id', payload.new.id).single();
+                if (data) setComments(prev => prev.find(c => c.id === data.id) ? prev : [...prev, data]);
+            })
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'community_comments', filter: `post_id=eq.${selectedPost.id}` }, (payload) => {
+                setComments(prev => prev.filter(c => c.id !== payload.old.id));
+            })
+            .subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [selectedPost]);
 
     useEffect(() => {
         if (!loading && allProfiles.length > 0) {
@@ -163,7 +194,7 @@ export const Communities = () => {
 
         } catch (error: any) {
             console.error(error);
-            toast.error(error.message || "Você precisa aplicar o Script SQL da tabela primeiro no banco de dados.");
+            toast.error(error.message || "Erro ao criar tópico no fórum. Verifique suas permissões.");
         } finally {
             setIsSubmitting(false);
         }
@@ -187,9 +218,39 @@ export const Communities = () => {
             toast.success('Resposta enviada!');
         } catch (error: any) {
             console.error(error);
-            toast.error("Erro! O banco precisa da tabela 'community_comments'.");
+            toast.error(error.message || "Erro ao responder tópico. Verifique suas permissões.");
         } finally {
             setIsSubmittingComment(false);
+        }
+    };
+
+    // Funcionalidade: Excluir Tópico
+    const handleDeleteTopic = async (e: React.MouseEvent, postId: string) => {
+        e.stopPropagation(); // Evita clicar e abrir o post
+        if (!confirm('Você tem certeza que deseja apagar este fórum? Todos os comentários serão perdidos.')) return;
+        try {
+            const { error } = await supabase.from('community_posts').delete().eq('id', postId);
+            if (error) throw error;
+            toast.success("Fórum apagado com sucesso.");
+            setCommunityPosts(prev => prev.filter(p => p.id !== postId));
+            if (selectedPost?.id === postId) setSelectedPost(null);
+        } catch (err: any) {
+            console.error(err);
+            toast.error(err.message || "Não foi possível apagar o fórum.");
+        }
+    };
+
+    // Funcionalidade: Excluir Comentário
+    const handleDeleteComment = async (commentId: string) => {
+        if (!confirm('Apagar comentário?')) return;
+        try {
+            const { error } = await supabase.from('community_comments').delete().eq('id', commentId);
+            if (error) throw error;
+            toast.success("Comentário apagado.");
+            setComments(prev => prev.filter(c => c.id !== commentId));
+        } catch (err: any) {
+            console.error(err);
+            toast.error(err.message || "Não foi possível apagar o comentário.");
         }
     };
 
@@ -426,7 +487,16 @@ export const Communities = () => {
                                                     <p className="text-[10px] text-slate-500 mt-1 uppercase">Criado por {post.profiles?.full_name}</p>
                                                 </div>
 
-                                                <ChevronRight className="text-slate-600 group-hover:text-white transition-colors shrink-0 hidden sm:block" />
+                                                {(userProfile?.uid === post.user_id || userProfile?.role === 'admin') && (
+                                                    <button
+                                                        onClick={(e) => handleDeleteTopic(e, post.id)}
+                                                        className="text-slate-500 hover:text-red-400 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all p-2 rounded-lg bg-white/5 sm:bg-transparent mr-2 shrink-0"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
+
+                                                <ChevronRight className="text-slate-600 group-hover:text-white transition-colors shrink-0 hidden sm:block delay-100" />
                                             </div>
                                         ))
                                     )}
@@ -486,14 +556,24 @@ export const Communities = () => {
                                                 <div className="flex justify-center py-6"><Loader2 className="animate-spin text-slate-500 w-6 h-6" /></div>
                                             ) : comments.length > 0 ? (
                                                 comments.map(c => (
-                                                    <div key={c.id} className="bg-[#142239] p-4 rounded-2xl border border-white/5 animate-fadeIn">
-                                                        <div className="flex items-center gap-2 mb-2">
-                                                            <div className="w-6 h-6 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center shrink-0 text-xs font-bold">
-                                                                {c.profiles?.full_name?.charAt(0) || <Users size={12} />}
+                                                    <div key={c.id} className="bg-[#142239] p-4 rounded-2xl border border-white/5 animate-fadeIn group flex items-start justify-between">
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                                <div className="w-6 h-6 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center shrink-0 text-xs font-bold">
+                                                                    {c.profiles?.full_name?.charAt(0) || <Users size={12} />}
+                                                                </div>
+                                                                <p className="text-xs text-slate-400 font-bold">{c.profiles?.full_name}</p>
                                                             </div>
-                                                            <p className="text-xs text-slate-400 font-bold">{c.profiles?.full_name}</p>
+                                                            <p className="text-sm text-slate-200 ml-8 whitespace-pre-wrap">{c.content}</p>
                                                         </div>
-                                                        <p className="text-sm text-slate-200 ml-8 whitespace-pre-wrap">{c.content}</p>
+                                                        {(userProfile?.uid === c.user_id || userProfile?.role === 'admin') && (
+                                                            <button
+                                                                onClick={() => handleDeleteComment(c.id)}
+                                                                className="text-slate-500 hover:text-red-400 p-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-all rounded-lg"
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        )}
                                                     </div>
                                                 ))
                                             ) : (
