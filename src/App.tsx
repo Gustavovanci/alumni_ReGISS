@@ -9,24 +9,35 @@ import { Loader2 } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { useStore } from './store/useStore';
 
-// ─── LAZY LOADING: O bundle inicial fica ~60% menor ──────────────────────────
-// Páginas raramente acessadas de imediato carregam apenas quando necessário
-const Auth = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
-const LandingAlumni = lazy(() => import('./pages/LandingAlumni').then(m => ({ default: m.LandingAlumni })));
-const ForCompanies = lazy(() => import('./pages/ForCompanies').then(m => ({ default: m.ForCompanies })));
-const Onboarding = lazy(() => import('./pages/Onboarding').then(m => ({ default: m.Onboarding })));
-const Coordination = lazy(() => import('./pages/Coordination').then(m => ({ default: m.Coordination })));
-const Feed = lazy(() => import('./pages/Feed').then(m => ({ default: m.Feed })));
-const Network = lazy(() => import('./pages/Network').then(m => ({ default: m.Network })));
-const MyJourney = lazy(() => import('./pages/MyJourney').then(m => ({ default: m.MyJourney })));
-const Jobs = lazy(() => import('./pages/Jobs').then(m => ({ default: m.Jobs })));
-const Events = lazy(() => import('./pages/Events').then(m => ({ default: m.Events })));
-const Insights = lazy(() => import('./pages/Insights').then(m => ({ default: m.Insights })));
-const Communities = lazy(() => import('./pages/Communities').then(m => ({ default: m.Communities })));
-const UserProfile = lazy(() => import('./pages/UserProfile').then(m => ({ default: m.UserProfile })));
-const Notifications = lazy(() => import('./pages/Notifications').then(m => ({ default: m.Notifications })));
-const Admin = lazy(() => import('./pages/Admin').then(m => ({ default: m.Admin })));
-const CompanyDashboard = lazy(() => import('./pages/CompanyDashboard').then(m => ({ default: m.CompanyDashboard })));
+// ─── LAZY LOADING COM PROTEÇÃO DE CACHE (PWA) ──────────────────────────
+// Se o Vercel atualiza e o SW tenta buscar um chunk velho, ele falha e força o reload pra limpar
+const lazyWithRetry = (componentImport: () => Promise<any>) =>
+  lazy(async () => {
+    try {
+      return await componentImport();
+    } catch (error) {
+      console.warn('Erro ao carregar página (cache velho). Atualizando app...', error);
+      window.location.reload(); 
+      return { default: () => <div className="min-h-screen bg-[#142239] flex items-center justify-center text-white"><Loader2 className="animate-spin text-[#D5205D] w-10 h-10" /></div> };
+    }
+  });
+
+const Auth = lazyWithRetry(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
+const LandingAlumni = lazyWithRetry(() => import('./pages/LandingAlumni').then(m => ({ default: m.LandingAlumni })));
+const ForCompanies = lazyWithRetry(() => import('./pages/ForCompanies').then(m => ({ default: m.ForCompanies })));
+const Onboarding = lazyWithRetry(() => import('./pages/Onboarding').then(m => ({ default: m.Onboarding })));
+const Coordination = lazyWithRetry(() => import('./pages/Coordination').then(m => ({ default: m.Coordination })));
+const Feed = lazyWithRetry(() => import('./pages/Feed').then(m => ({ default: m.Feed })));
+const Network = lazyWithRetry(() => import('./pages/Network').then(m => ({ default: m.Network })));
+const MyJourney = lazyWithRetry(() => import('./pages/MyJourney').then(m => ({ default: m.MyJourney })));
+const Jobs = lazyWithRetry(() => import('./pages/Jobs').then(m => ({ default: m.Jobs })));
+const Events = lazyWithRetry(() => import('./pages/Events').then(m => ({ default: m.Events })));
+const Insights = lazyWithRetry(() => import('./pages/Insights').then(m => ({ default: m.Insights })));
+const Communities = lazyWithRetry(() => import('./pages/Communities').then(m => ({ default: m.Communities })));
+const UserProfile = lazyWithRetry(() => import('./pages/UserProfile').then(m => ({ default: m.UserProfile })));
+const Notifications = lazyWithRetry(() => import('./pages/Notifications').then(m => ({ default: m.Notifications })));
+const Admin = lazyWithRetry(() => import('./pages/Admin').then(m => ({ default: m.Admin })));
+const CompanyDashboard = lazyWithRetry(() => import('./pages/CompanyDashboard').then(m => ({ default: m.CompanyDashboard })));
 
 // RASTREADOR DE PRESENÇA (MANTIDO)
 const PresenceTracker = () => {
@@ -116,69 +127,51 @@ function App() {
 
   useEffect(() => {
     let isMounted = true;
-    const initializeApp = async () => {
-      const startTime = Date.now();
+    let initialCheckDone = false;
+    const startTime = Date.now();
 
-      // 1. Verificação de sessão ÚNICA — resultado compartilhado com o store
-      const { data } = await supabase.auth.getSession();
-
-      if (data.session) {
-        if (isMounted) setSession(data.session);
-
-        // Pre-fetch do role para roteamento e alimenta o store centralizado
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', data.session.user.id)
-          .single();
-
-        const role = profile?.role ?? null;
-        if (isMounted) {
-          setUserRole(role);
-          // Armazena no store para que ProtectedRoute não precise re-buscar
-          setAuthState(data.session.user, role);
-        }
-      } else {
-        // Sem sessão — marca como pronto imediatamente
-        if (isMounted) setAuthState(null, null);
-      }
-
-      // 2. Libera a montagem das rotas
-      if (isMounted) setSessionChecked(true);
-
-      const elapsed = Date.now() - startTime;
-
-      // 3. Controla a splash screen
-      if (isMobile) {
-        const remainingDelay = Math.max(1000 - elapsed, 0);
-        setTimeout(() => {
-          if (isMounted) setIsFading(true);
-          setTimeout(() => {
-            if (isMounted) setShowSplash(false);
-          }, 600);
-        }, remainingDelay);
-      } else {
-        if (isMounted) setShowSplash(false);
-      }
-    };
-
-    initializeApp();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (!isMounted) return;
+      
       setSession(newSession);
+      
       if (newSession) {
+        // Busca a role apenas 1 vez (o onAuthStateChange dispara 'INITIAL_SESSION' no mount)
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', newSession.user.id)
           .single();
+          
         const role = profile?.role ?? null;
-        setUserRole(role);
-        setAuthState(newSession.user, role);
+        if (isMounted) {
+          setUserRole(role);
+          setAuthState(newSession.user, role);
+        }
       } else {
-        setUserRole(null);
-        setAuthState(null, null);
+        if (isMounted) {
+          setUserRole(null);
+          setAuthState(null, null);
+        }
+      }
+
+      // Libera a tela inicial APENAS na primeira vez que o evento for disparado
+      if (!initialCheckDone && isMounted) {
+        initialCheckDone = true;
+        setSessionChecked(true);
+
+        const elapsed = Date.now() - startTime;
+        if (isMobile) {
+          const remainingDelay = Math.max(1000 - elapsed, 0);
+          setTimeout(() => {
+            if (isMounted) setIsFading(true);
+            setTimeout(() => {
+              if (isMounted) setShowSplash(false);
+            }, 600);
+          }, remainingDelay);
+        } else {
+          setShowSplash(false);
+        }
       }
     });
 
