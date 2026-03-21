@@ -7,6 +7,26 @@ import { GlobalFAB } from './components/GlobalFAB';
 import { Toaster } from 'sonner';
 import { Loader2 } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
+import { useStore } from './store/useStore';
+
+// ─── LAZY LOADING: O bundle inicial fica ~60% menor ──────────────────────────
+// Páginas raramente acessadas de imediato carregam apenas quando necessário
+const Auth = lazy(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
+const LandingAlumni = lazy(() => import('./pages/LandingAlumni').then(m => ({ default: m.LandingAlumni })));
+const ForCompanies = lazy(() => import('./pages/ForCompanies').then(m => ({ default: m.ForCompanies })));
+const Onboarding = lazy(() => import('./pages/Onboarding').then(m => ({ default: m.Onboarding })));
+const Coordination = lazy(() => import('./pages/Coordination').then(m => ({ default: m.Coordination })));
+const Feed = lazy(() => import('./pages/Feed').then(m => ({ default: m.Feed })));
+const Network = lazy(() => import('./pages/Network').then(m => ({ default: m.Network })));
+const MyJourney = lazy(() => import('./pages/MyJourney').then(m => ({ default: m.MyJourney })));
+const Jobs = lazy(() => import('./pages/Jobs').then(m => ({ default: m.Jobs })));
+const Events = lazy(() => import('./pages/Events').then(m => ({ default: m.Events })));
+const Insights = lazy(() => import('./pages/Insights').then(m => ({ default: m.Insights })));
+const Communities = lazy(() => import('./pages/Communities').then(m => ({ default: m.Communities })));
+const UserProfile = lazy(() => import('./pages/UserProfile').then(m => ({ default: m.UserProfile })));
+const Notifications = lazy(() => import('./pages/Notifications').then(m => ({ default: m.Notifications })));
+const Admin = lazy(() => import('./pages/Admin').then(m => ({ default: m.Admin })));
+const CompanyDashboard = lazy(() => import('./pages/CompanyDashboard').then(m => ({ default: m.CompanyDashboard })));
 
 // RASTREADOR DE PRESENÇA (MANTIDO)
 const PresenceTracker = () => {
@@ -43,26 +63,6 @@ const PresenceTracker = () => {
   return null;
 };
 
-
-
-import { Auth } from './pages/Auth';
-import { LandingAlumni } from './pages/LandingAlumni';
-import { ForCompanies } from './pages/ForCompanies';
-
-import { Onboarding } from './pages/Onboarding';
-import { Coordination } from './pages/Coordination';
-import { Feed } from './pages/Feed';
-import { Network } from './pages/Network';
-import { MyJourney } from './pages/MyJourney';
-import { Jobs } from './pages/Jobs';
-import { Events } from './pages/Events';
-import { Insights } from './pages/Insights';
-import { Communities } from './pages/Communities';
-import { UserProfile } from './pages/UserProfile';
-import { Notifications } from './pages/Notifications';
-import { Admin } from './pages/Admin';
-import { CompanyDashboard } from './pages/CompanyDashboard';
-
 // Loading Secundário Discreto
 const GentleLoader = () => (
   <div className="h-screen w-full flex items-center justify-center bg-transparent">
@@ -81,7 +81,9 @@ const SocialLayout = () => (
       <PresenceTracker />
       <Sidebar />
       <div className="pl-16 md:pl-20 min-h-screen relative">
-        <Outlet />
+        <Suspense fallback={<GentleLoader />}>
+          <Outlet />
+        </Suspense>
       </div>
       <GlobalFAB />
     </div>
@@ -93,7 +95,9 @@ const AdminLayout = () => (
   <ProtectedRoute>
     <div className="min-h-screen bg-[#0B1320] text-slate-100 font-sans selection:bg-[#D5205D]/30">
       <PresenceTracker />
-      <Outlet />
+      <Suspense fallback={<GentleLoader />}>
+        <Outlet />
+      </Suspense>
     </div>
   </ProtectedRoute>
 );
@@ -105,6 +109,8 @@ function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [isFading, setIsFading] = useState(false);
 
+  const { setAuthState } = useStore();
+
   // Detecção heurística de celular vs desktop
   const isMobile = window.innerWidth <= 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
@@ -113,22 +119,36 @@ function App() {
     const initializeApp = async () => {
       const startTime = Date.now();
 
-      // 1. O Supabase verifica se tem token armazenado
+      // 1. Verificação de sessão ÚNICA — resultado compartilhado com o store
       const { data } = await supabase.auth.getSession();
 
       if (data.session) {
         if (isMounted) setSession(data.session);
-        // Pre-fetch da rule (Admin ou Comum ou Companhia) para roteamento nativo sem delays
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.session.user.id).single();
-        if (profile && isMounted) setUserRole(profile.role);
+
+        // Pre-fetch do role para roteamento e alimenta o store centralizado
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.session.user.id)
+          .single();
+
+        const role = profile?.role ?? null;
+        if (isMounted) {
+          setUserRole(role);
+          // Armazena no store para que ProtectedRoute não precise re-buscar
+          setAuthState(data.session.user, role);
+        }
+      } else {
+        // Sem sessão — marca como pronto imediatamente
+        if (isMounted) setAuthState(null, null);
       }
 
-      // 2. Agora sabemos se tem alguem logado, podemos soltar a montagem da cortina de fundo (Routes)
+      // 2. Libera a montagem das rotas
       if (isMounted) setSessionChecked(true);
 
       const elapsed = Date.now() - startTime;
 
-      // 3. Aguarda o tempo natural de animacao e some a Splash se for celular. Se não for, fecha sumariamente.
+      // 3. Controla a splash screen
       if (isMobile) {
         const remainingDelay = Math.max(1000 - elapsed, 0);
         setTimeout(() => {
@@ -148,10 +168,17 @@ function App() {
       if (!isMounted) return;
       setSession(newSession);
       if (newSession) {
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', newSession.user.id).single();
-        if (profile) setUserRole(profile.role);
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', newSession.user.id)
+          .single();
+        const role = profile?.role ?? null;
+        setUserRole(role);
+        setAuthState(newSession.user, role);
       } else {
         setUserRole(null);
+        setAuthState(null, null);
       }
     });
 

@@ -1,8 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Bell, Check, Heart, MessageCircle, Loader2, Trash2, Pin } from 'lucide-react';
+import { ArrowLeft, Bell, Heart, MessageCircle, Loader2, Trash2, Pin } from 'lucide-react';
 import { toast } from 'sonner';
+
+const NotificationSkeleton = () => (
+  <div className="space-y-3">
+    {[1, 2, 3, 4, 5].map(i => (
+      <div key={i} className="p-4 rounded-xl flex gap-4 items-start border border-white/5 bg-[#142239] animate-pulse">
+        <div className="w-8 h-8 rounded-full bg-white/10 shrink-0 mt-1" />
+        <div className="flex-1 space-y-2">
+          <div className="h-4 bg-white/10 rounded w-2/3" />
+          <div className="h-3 bg-white/5 rounded w-1/2" />
+          <div className="h-3 bg-white/5 rounded w-1/4" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
 
 export const Notifications = () => {
   const navigate = useNavigate();
@@ -76,7 +91,7 @@ export const Notifications = () => {
 
       <main className="max-w-2xl mx-auto px-4 py-6">
         {loading ? (
-          <div className="flex justify-center mt-10"><Loader2 className="w-8 h-8 text-[#D5205D] animate-spin" /></div>
+          <NotificationSkeleton />
         ) : notifications.length === 0 ? (
           <div className="text-center py-20 border border-dashed border-white/10 rounded-2xl">
             <Bell size={48} className="mx-auto text-slate-700 mb-4" />

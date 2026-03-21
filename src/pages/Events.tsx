@@ -45,6 +45,8 @@ export const Events = () => {
 
     try {
       // Requições Paralelas pra evitar estrangulamento de RTT (Tempo de I/O)
+      const currentMonthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+
       const [
         { data: { user } },
         { data: local },
@@ -52,7 +54,12 @@ export const Events = () => {
       ] = await Promise.all([
         supabase.auth.getUser(),
         supabase.from('events').select('*').order('start_time', { ascending: true }),
-        supabase.from('profiles').select('full_name, birth_date')
+        // Filtra aniversariantes do mês atual diretamente no banco (evita baixar TODOS os perfis)
+        supabase.from('profiles')
+          .select('full_name, birth_date')
+          .not('birth_date', 'is', null)
+          .like('birth_date', `%-${currentMonthStr}-%`)
+          .limit(100)
       ]);
 
       setCurrentUser(user);

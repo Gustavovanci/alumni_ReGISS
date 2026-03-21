@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { ExternalLink, Plus, Building, MapPin, Briefcase, Clock, Calendar, Check, Loader2 } from 'lucide-react';
 import { getRegissStatus } from '../utils/regissLogic';
 import { toast } from 'sonner';
+import { useStore } from '../store/useStore';
 
 const JobSkeleton = () => (
   <div className="space-y-4">
@@ -26,13 +27,16 @@ const JobSkeleton = () => (
 );
 
 export const Jobs = () => {
+  // Lê role do store (já carregado pelo App.tsx — zero query extra)
+  const { userProfile } = useStore();
+  const currentUserRole = userProfile?.role || 'user';
+
   const [jobs, setJobs] = useState<any[]>([]);
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [applyingTo, setApplyingTo] = useState<string | null>(null);
-  const [currentUserRole, setCurrentUserRole] = useState('user');
 
   const [newJob, setNewJob] = useState({ description: '', link: '', company: '', isPremium: false });
 
@@ -54,7 +58,7 @@ export const Jobs = () => {
 
       if (error) throw error;
 
-      // Buscar Candidaturas e Role do Usuário Atual
+      // Buscar apenas candidaturas (role já vem do store)
       if (user) {
         const { data: myApps } = await supabase
           .from('job_applications')
@@ -62,9 +66,6 @@ export const Jobs = () => {
           .eq('applicant_id', user.id);
 
         setApplications(myApps || []);
-
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-        if (profile) setCurrentUserRole(profile.role || 'user');
       }
 
       setJobs(data || []);

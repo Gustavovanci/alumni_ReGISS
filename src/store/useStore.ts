@@ -2,6 +2,12 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 
 interface StoreState {
+    // 0. Auth State Centralizado (Elimina queries duplicadas no ProtectedRoute)
+    currentUser: any | null;
+    userRole: string | null;
+    isAuthReady: boolean;
+    setAuthState: (user: any | null, role: string | null) => void;
+
     // 1. Cache do Usuário
     userProfile: any | null;
     setUserProfile: (profile: any) => void;
@@ -21,6 +27,12 @@ interface StoreState {
 }
 
 export const useStore = create<StoreState>((set, get) => ({
+    // 0. Auth State Centralizado
+    currentUser: null,
+    userRole: null,
+    isAuthReady: false,
+    setAuthState: (user, role) => set({ currentUser: user, userRole: role, isAuthReady: true }),
+
     userProfile: null,
     setUserProfile: (profile) => set({ userProfile: profile }),
 

@@ -1,62 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { useStore } from '../store/useStore';
 import { Loader2 } from 'lucide-react';
 
 export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const [loading, setLoading] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  // Lê do store centralizado — ZERO chamadas ao Supabase aqui.
+  // App.tsx já buscou a sessão e o role uma única vez e armazenou no store.
+  const { isAuthReady, currentUser, userRole } = useStore();
   const location = useLocation();
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const initializeSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-
-        if (error) throw error;
-
-        if (session && isMounted) {
-          setIsAuthenticated(true);
-          const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-          if (profile && isMounted) setUserRole(profile.role);
-        } else if (isMounted) {
-          setIsAuthenticated(false);
-          setUserRole(null);
-        }
-      } catch (error) {
-        console.error('Initial session fetch error:', error);
-        if (isMounted) setIsAuthenticated(false);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    initializeSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!isMounted) return;
-
-      if (session) {
-        setIsAuthenticated(true);
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-        if (profile && isMounted) setUserRole(profile.role);
-      } else {
-        setIsAuthenticated(false);
-        setUserRole(null);
-      }
-      if (isMounted) setLoading(false);
-    });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  if (loading) {
+  // Enquanto App.tsx ainda não terminou de checar a sessão, segura aqui
+  if (!isAuthReady) {
     return (
       <div className="fixed inset-0 z-[999] flex items-center justify-center bg-[#142239]">
         <Loader2 className="w-12 h-12 text-[#D5205D] animate-spin" />
@@ -64,7 +18,7 @@ export const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!currentUser) {
     return <Navigate to="/" replace />;
   }
 
