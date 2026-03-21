@@ -111,8 +111,8 @@ function App() {
 
   const { setAuthState } = useStore();
 
-  // Detecção heurística de celular vs desktop
-  const isMobile = window.innerWidth <= 768 || /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  // Detecção heurística de celular vs desktop (Apenas User Agent, para não acionar no PC com tela dividida)
+  const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
 
   useEffect(() => {
     let isMounted = true;
