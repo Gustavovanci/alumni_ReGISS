@@ -153,30 +153,32 @@ export const Events = () => {
 
       if (error) throw error;
 
-        // [NOTIFICAÇÃO GLOBAL] Eventos Públicos notificam TODO MUNDO conforme feedback
-        if (allProfiles.length > 0 && userProfile && newEvent.is_public) {
+      toast.success("Evento salvo!");
+      setShowEventForm(false); // Changed from setShowForm to setShowEventForm
+      setIsModalOpen(false); // Added to close modal
+      setNewEvent({ title: '', description: '', start_time: '', end_time: '', is_public: false }); // Kept description
+      fetchData(); // Changed from fetchEvents to fetchData
+
+      // [BACKGROUND NOTIFICATIONS]
+      if (allProfiles.length > 0 && userProfile && newEvent.is_public) {
+        (async () => {
           const targets = allProfiles.filter(p => p.id !== currentUser.id);
 
-        const chunk = 100;
-        for (let i = 0; i < targets.length; i += chunk) {
+          const chunk = 100;
+          for (let i = 0; i < targets.length; i += chunk) {
             const batch = targets.slice(i, i + chunk).map(t => ({
               user_id: t.id,
-              actor_id: currentUser.id, // [FIX] Adicionado quem enviou
-              type: 'event',            // [FIX] Tipo corrigido
+              actor_id: currentUser.id,
+              type: 'event',
               title: 'Novo Evento na sua Rede',
               content: `${userProfile.full_name?.split(' ')[0]} agendou: "${newEvent.title}"`,
               read: false,
               target_url: '/events'
             }));
             await supabase.from('notifications').insert(batch);
-        }
+          }
+        })();
       }
-
-      toast.success("Evento criado com sucesso!");
-      setIsModalOpen(false);
-      setShowEventForm(false);
-      setNewEvent({ title: '', description: '', start_time: '', end_time: '', is_public: false });
-      fetchData();
     } catch (error: any) {
       console.error(error);
       toast.error(error.message || "Erro ao criar o evento. Verifique as permissões do banco.");

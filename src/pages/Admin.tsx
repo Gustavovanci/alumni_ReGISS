@@ -182,28 +182,32 @@ export const Admin = () => {
          setIsCreatingUpdate(false);
          fetchUpdates();
          toast.success("Comunicado publicado!");
+         setNewUpdate({ title: '', content: '', link_url: '', image_url: '' });
+         setIsCreatingUpdate(false);
+         fetchUpdates();
 
-         // [NOTIFICAÇÃO GLOBAL] 
-         // Envia para o sininho de todos os usuários
-         try {
-            const { data: users } = await supabase.from('profiles').select('id');
-            if (users && users.length > 0) {
-               const chunk = 100;
-               for (let i = 0; i < users.length; i += chunk) {
-                  const batch = users.slice(i, i + chunk).map(u => ({
-                     user_id: u.id,
-                     actor_id: adminUser?.id,
-                     type: 'system',
-                     title: 'Comunicado do Sistema',
-                     content: `📢 ${newUpdate.title}: ${newUpdate.content.slice(0, 50)}...`,
-                     read: false
-                  }));
-                  await supabase.from('notifications').insert(batch);
+         // [BACKGROUND NOTIFICATIONS] - Envia para o sininho de todos
+         (async () => {
+            try {
+               const { data: users } = await supabase.from('profiles').select('id');
+               if (users && users.length > 0) {
+                  const chunk = 100;
+                  for (let i = 0; i < users.length; i += chunk) {
+                     const batch = users.slice(i, i + chunk).map(u => ({
+                        user_id: u.id,
+                        actor_id: adminUser?.id,
+                        type: 'system',
+                        title: 'Comunicado do Sistema',
+                        content: `📢 ${newUpdate.title}: ${newUpdate.content.slice(0, 50)}...`,
+                        read: false
+                     }));
+                     await supabase.from('notifications').insert(batch);
+                  }
                }
+            } catch (err) {
+               console.error("Erro ao disparar notificações globais:", err);
             }
-         } catch (err) {
-            console.error("Erro ao disparar notificações globais:", err);
-         }
+         })();
       }
    };
 

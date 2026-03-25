@@ -77,28 +77,29 @@ export const GlobalFAB = () => {
             const { error } = await supabase.from('events').insert([{ user_id: userId, ...newEvent }]);
             if (error) throw error;
 
-            // [NOTIFICAÇÃO GLOBAL] Eventos Públicos notificam TODO MUNDO conforme feedback
-            if (allProfiles.length > 0 && userProfile && newEvent.is_public) {
-                const targets = allProfiles.filter(p => p.id !== userId);
-
-                const chunk = 100;
-                for (let i = 0; i < targets.length; i += chunk) {
-                    const batch = targets.slice(i, i + chunk).map(t => ({
-                        user_id: t.id,
-                        actor_id: userId, // [FIX] Adicionado quem enviou
-                        type: 'event',    // [FIX] Tipo corrigido
-                        title: 'Novo Evento na sua Rede',
-                        content: `${userProfile.full_name?.split(' ')[0]} agendou: "${newEvent.title}"`,
-                        read: false,
-                        target_url: '/events'
-                    }));
-                    await supabase.from('notifications').insert(batch);
-                }
-            }
-
             toast.success("Evento salvo na agenda!");
             setActiveModal(null);
             setNewEvent({ title: '', start_time: '', end_time: '', is_public: false });
+
+            // [BACKGROUND NOTIFICATIONS]
+            if (allProfiles.length > 0 && userProfile && newEvent.is_public) {
+                (async () => {
+                    const targets = allProfiles.filter(p => p.id !== userId);
+                    const chunk = 100;
+                    for (let i = 0; i < targets.length; i += chunk) {
+                        const batch = targets.slice(i, i + chunk).map(t => ({
+                            user_id: t.id,
+                            actor_id: userId,
+                            type: 'event',
+                            title: 'Novo Evento na sua Rede',
+                            content: `${userProfile.full_name?.split(' ')[0]} agendou: "${newEvent.title}"`,
+                            read: false,
+                            target_url: '/events'
+                        }));
+                        await supabase.from('notifications').insert(batch);
+                    }
+                })();
+            }
         } catch (error: any) {
             toast.error("Erro ao criar evento: " + error.message);
         } finally {
@@ -135,31 +136,33 @@ export const GlobalFAB = () => {
 
             if (error) throw error;
 
-            // [NOTIFICAÇÃO POR AFINIDADE]
-            if (allProfiles.length > 0 && userProfile) {
-                const targets = allProfiles.filter(p => 
-                    p.id !== userId && 
-                    (p.profession === userProfile.profession || p.entry_year === userProfile.entry_year)
-                );
-
-                const chunk = 100;
-                for (let i = 0; i < targets.length; i += chunk) {
-                    const batch = targets.slice(i, i + chunk).map(t => ({
-                        user_id: t.id,
-                        actor_id: userId, // [FIX] Adicionado quem enviou
-                        type: 'vacancy',  // [FIX] Tipo corrigido
-                        title: 'Nova Vaga na sua Rede',
-                        content: `${userProfile.full_name?.split(' ')[0]} divulgou uma vaga na empresa ${newJob.company}`,
-                        read: false,
-                        target_url: '/jobs'
-                    }));
-                    await supabase.from('notifications').insert(batch);
-                }
-            }
-
             toast.success("Vaga publicada com sucesso!");
             setActiveModal(null);
             setNewJob({ description: '', link: '', company: '', isPremium: false });
+
+            // [BACKGROUND NOTIFICATIONS]
+            if (allProfiles.length > 0 && userProfile) {
+                (async () => {
+                    const targets = allProfiles.filter(p => 
+                        p.id !== userId && 
+                        (p.profession === userProfile.profession || p.entry_year === userProfile.entry_year)
+                    );
+
+                    const chunk = 100;
+                    for (let i = 0; i < targets.length; i += chunk) {
+                        const batch = targets.slice(i, i + chunk).map(t => ({
+                            user_id: t.id,
+                            actor_id: userId,
+                            type: 'vacancy',
+                            title: 'Nova Vaga na sua Rede',
+                            content: `${userProfile.full_name?.split(' ')[0]} divulgou uma vaga na empresa ${newJob.company}`,
+                            read: false,
+                            target_url: '/jobs'
+                        }));
+                        await supabase.from('notifications').insert(batch);
+                    }
+                })();
+            }
         } catch (error: any) {
             toast.error("Erro ao divulgar vaga: " + error.message);
         } finally {
