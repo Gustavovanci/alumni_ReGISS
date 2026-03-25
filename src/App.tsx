@@ -1,4 +1,4 @@
-import React, { useEffect, useState, Suspense, lazy } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { supabase } from './lib/supabase';
@@ -9,35 +9,22 @@ import { Loader2 } from 'lucide-react';
 import { SplashScreen } from './components/SplashScreen';
 import { useStore } from './store/useStore';
 
-// ─── LAZY LOADING COM PROTEÇÃO DE CACHE (PWA) ──────────────────────────
-// Se o Vercel atualiza e o SW tenta buscar um chunk velho, ele falha e força o reload pra limpar
-const lazyWithRetry = (componentImport: () => Promise<any>) =>
-  lazy(async () => {
-    try {
-      return await componentImport();
-    } catch (error) {
-      console.warn('Erro ao carregar página (cache velho). Atualizando app...', error);
-      window.location.reload(); 
-      return { default: () => <div className="min-h-screen bg-[#142239] flex items-center justify-center text-white"><Loader2 className="animate-spin text-[#D5205D] w-10 h-10" /></div> };
-    }
-  });
-
-const Auth = lazyWithRetry(() => import('./pages/Auth').then(m => ({ default: m.Auth })));
-const LandingAlumni = lazyWithRetry(() => import('./pages/LandingAlumni').then(m => ({ default: m.LandingAlumni })));
-const ForCompanies = lazyWithRetry(() => import('./pages/ForCompanies').then(m => ({ default: m.ForCompanies })));
-const Onboarding = lazyWithRetry(() => import('./pages/Onboarding').then(m => ({ default: m.Onboarding })));
-const Coordination = lazyWithRetry(() => import('./pages/Coordination').then(m => ({ default: m.Coordination })));
-const Feed = lazyWithRetry(() => import('./pages/Feed').then(m => ({ default: m.Feed })));
-const Network = lazyWithRetry(() => import('./pages/Network').then(m => ({ default: m.Network })));
-const MyJourney = lazyWithRetry(() => import('./pages/MyJourney').then(m => ({ default: m.MyJourney })));
-const Jobs = lazyWithRetry(() => import('./pages/Jobs').then(m => ({ default: m.Jobs })));
-const Events = lazyWithRetry(() => import('./pages/Events').then(m => ({ default: m.Events })));
-const Insights = lazyWithRetry(() => import('./pages/Insights').then(m => ({ default: m.Insights })));
-const Communities = lazyWithRetry(() => import('./pages/Communities').then(m => ({ default: m.Communities })));
-const UserProfile = lazyWithRetry(() => import('./pages/UserProfile').then(m => ({ default: m.UserProfile })));
-const Notifications = lazyWithRetry(() => import('./pages/Notifications').then(m => ({ default: m.Notifications })));
-const Admin = lazyWithRetry(() => import('./pages/Admin').then(m => ({ default: m.Admin })));
-const CompanyDashboard = lazyWithRetry(() => import('./pages/CompanyDashboard').then(m => ({ default: m.CompanyDashboard })));
+import { Auth } from './pages/Auth';
+import { LandingAlumni } from './pages/LandingAlumni';
+import { ForCompanies } from './pages/ForCompanies';
+import { Onboarding } from './pages/Onboarding';
+import { Coordination } from './pages/Coordination';
+import { Feed } from './pages/Feed';
+import { Network } from './pages/Network';
+import { MyJourney } from './pages/MyJourney';
+import { Jobs } from './pages/Jobs';
+import { Events } from './pages/Events';
+import { Insights } from './pages/Insights';
+import { Communities } from './pages/Communities';
+import { UserProfile } from './pages/UserProfile';
+import { Notifications } from './pages/Notifications';
+import { Admin } from './pages/Admin';
+import { CompanyDashboard } from './pages/CompanyDashboard';
 
 // RASTREADOR DE PRESENÇA (MANTIDO)
 const PresenceTracker = () => {
