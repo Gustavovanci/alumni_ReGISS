@@ -28,7 +28,7 @@ const JobSkeleton = () => (
 
 export const Jobs = () => {
   // Lê role do store (já carregado pelo App.tsx — zero query extra)
-  const { userProfile } = useStore();
+  const { userProfile, allProfiles, fetchAllProfiles } = useStore();
   const currentUserRole = userProfile?.role || 'user';
 
   const [jobs, setJobs] = useState<any[]>([]);
@@ -104,6 +104,8 @@ export const Jobs = () => {
       })
       .subscribe();
 
+    fetchAllProfiles();
+
     return () => {
       supabase.removeChannel(channel);
     };
@@ -145,7 +147,28 @@ export const Jobs = () => {
         expires_at: expiresAt.toISOString()
       });
 
-      if (error) throw error; // O Catch vai capturar e mostrar o motivo no Toast
+      if (error) throw error;
+
+      // [NOTIFICAÇÃO POR AFINIDADE]
+      if (allProfiles.length > 0 && userProfile) {
+        const targets = allProfiles.filter(p => 
+          p.id !== user.id && 
+          (p.profession === userProfile.profession || p.entry_year === userProfile.entry_year)
+        );
+
+        const chunk = 100;
+        for (let i = 0; i < targets.length; i += chunk) {
+          const batch = targets.slice(i, i + chunk).map(t => ({
+            user_id: t.id,
+            type: 'network_job',
+            title: 'Nova Vaga na sua Rede',
+            content: `${userProfile.full_name?.split(' ')[0]} divulgou uma vaga na empresa ${newJob.company}`,
+            read: false,
+            target_url: '/jobs'
+          }));
+          supabase.from('notifications').insert(batch).then();
+        }
+      }
 
       toast.success("Vaga publicada com sucesso!");
       setIsCreating(false);

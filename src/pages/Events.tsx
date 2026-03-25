@@ -6,6 +6,7 @@ import {
   ChevronLeft, ChevronRight, ChevronDown, X, Check, Trash2, CalendarDays, CalendarSync, Loader2
 } from 'lucide-react';
 import { getHolidays } from '../utils/holidays';
+import { useStore } from '../store/useStore';
 
 export const Events = () => {
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
@@ -16,6 +17,7 @@ export const Events = () => {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const { userProfile, allProfiles, fetchAllProfiles } = useStore();
 
   const [showMonthPicker, setShowMonthPicker] = useState(false);
   const [pickerYear, setPickerYear] = useState(currentDate.getFullYear());
@@ -61,6 +63,8 @@ export const Events = () => {
           .like('birth_date', `%-${currentMonthStr}-%`)
           .limit(100)
       ]);
+
+      fetchAllProfiles();
 
       setCurrentUser(user);
       setLocalEvents(local || []);
@@ -148,6 +152,27 @@ export const Events = () => {
       }]);
 
       if (error) throw error;
+
+      // [NOTIFICAÇÃO POR AFINIDADE]
+      if (allProfiles.length > 0 && userProfile && newEvent.is_public) {
+        const targets = allProfiles.filter(p => 
+          p.id !== currentUser.id && 
+          (p.profession === userProfile.profession || p.entry_year === userProfile.entry_year)
+        );
+
+        const chunk = 100;
+        for (let i = 0; i < targets.length; i += chunk) {
+          const batch = targets.slice(i, i + chunk).map(t => ({
+            user_id: t.id,
+            type: 'network_event',
+            title: 'Novo Evento na sua Rede',
+            content: `${userProfile.full_name?.split(' ')[0]} agendou: "${newEvent.title}"`,
+            read: false,
+            target_url: '/events'
+          }));
+          supabase.from('notifications').insert(batch).then();
+        }
+      }
 
       toast.success("Evento criado com sucesso!");
       setIsModalOpen(false);

@@ -8,7 +8,7 @@ export const GlobalFAB = () => {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     // Lê do store global — zero query extra
-    const { userRole, currentUser } = useStore();
+    const { userRole, currentUser, userProfile, allProfiles, fetchAllProfiles } = useStore();
     const role = userRole || 'user';
     const userId = currentUser?.id || null;
 
@@ -20,6 +20,11 @@ export const GlobalFAB = () => {
     const [postContent, setPostContent] = useState('');
     const [newEvent, setNewEvent] = useState({ title: '', start_time: '', end_time: '', is_public: false });
     const [newJob, setNewJob] = useState({ company: '', link: '', description: '', isPremium: false });
+
+    // Fetch Inicial e Cache da Rede (Necessário para as notificações)
+    useEffect(() => {
+        fetchAllProfiles();
+    }, [fetchAllProfiles]);
 
     // Fechar ao clicar fora ou apertar Esc (UX refinada)
     useEffect(() => {
@@ -50,6 +55,28 @@ export const GlobalFAB = () => {
         try {
             const { error } = await supabase.from('posts').insert({ user_id: userId, content: postContent, type: 'general' });
             if (error) throw error;
+
+            // [NOTIFICAÇÃO POR AFINIDADE]
+            if (allProfiles.length > 0 && userProfile) {
+                const targets = allProfiles.filter(p => 
+                    p.id !== userId && 
+                    (p.profession === userProfile.profession || p.entry_year === userProfile.entry_year)
+                );
+
+                const chunk = 100;
+                for (let i = 0; i < targets.length; i += chunk) {
+                    const batch = targets.slice(i, i + chunk).map(t => ({
+                        user_id: t.id,
+                        type: 'network_post',
+                        title: 'Novo Post na sua Rede',
+                        content: `${userProfile.full_name?.split(' ')[0]} postou algo novo. Confira!`,
+                        read: false,
+                        target_url: '/feed'
+                    }));
+                    supabase.from('notifications').insert(batch).then();
+                }
+            }
+
             toast.success("Post publicado com sucesso!");
             setActiveModal(null);
             setPostContent('');
@@ -67,6 +94,28 @@ export const GlobalFAB = () => {
         try {
             const { error } = await supabase.from('events').insert([{ user_id: userId, ...newEvent }]);
             if (error) throw error;
+
+            // [NOTIFICAÇÃO POR AFINIDADE]
+            if (allProfiles.length > 0 && userProfile && newEvent.is_public) {
+                const targets = allProfiles.filter(p => 
+                    p.id !== userId && 
+                    (p.profession === userProfile.profession || p.entry_year === userProfile.entry_year)
+                );
+
+                const chunk = 100;
+                for (let i = 0; i < targets.length; i += chunk) {
+                    const batch = targets.slice(i, i + chunk).map(t => ({
+                        user_id: t.id,
+                        type: 'network_event',
+                        title: 'Novo Evento na sua Rede',
+                        content: `${userProfile.full_name?.split(' ')[0]} agendou: "${newEvent.title}"`,
+                        read: false,
+                        target_url: '/events'
+                    }));
+                    supabase.from('notifications').insert(batch).then();
+                }
+            }
+
             toast.success("Evento salvo na agenda!");
             setActiveModal(null);
             setNewEvent({ title: '', start_time: '', end_time: '', is_public: false });
@@ -105,6 +154,28 @@ export const GlobalFAB = () => {
             });
 
             if (error) throw error;
+
+            // [NOTIFICAÇÃO POR AFINIDADE]
+            if (allProfiles.length > 0 && userProfile) {
+                const targets = allProfiles.filter(p => 
+                    p.id !== userId && 
+                    (p.profession === userProfile.profession || p.entry_year === userProfile.entry_year)
+                );
+
+                const chunk = 100;
+                for (let i = 0; i < targets.length; i += chunk) {
+                    const batch = targets.slice(i, i + chunk).map(t => ({
+                        user_id: t.id,
+                        type: 'network_job',
+                        title: 'Nova Vaga na sua Rede',
+                        content: `${userProfile.full_name?.split(' ')[0]} divulgou uma vaga na empresa ${newJob.company}`,
+                        read: false,
+                        target_url: '/jobs'
+                    }));
+                    supabase.from('notifications').insert(batch).then();
+                }
+            }
+
             toast.success("Vaga publicada com sucesso!");
             setActiveModal(null);
             setNewJob({ description: '', link: '', company: '', isPremium: false });
