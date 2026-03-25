@@ -2,11 +2,14 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, Users, Briefcase, Calendar, BarChart3, User, LogOut, Megaphone, MessageSquare, Bell } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useStore } from '../store/useStore';
 
 export const Sidebar = React.memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [role, setRole] = React.useState('user');
+  // Lê do store global — zero query extra, sempre sincronizado com App.tsx
+  const { userRole, setAuthState } = useStore();
+  const role = userRole || 'user';
   const [unreadNotifications, setUnreadNotifications] = React.useState(0);
 
   const isActive = (path: string) => location.pathname === path;
@@ -34,12 +37,10 @@ export const Sidebar = React.memo(() => {
   React.useEffect(() => {
     let channel: any;
 
-    const fetchInitialData = async () => {
+    const fetchNotifications = async () => {
         const { data } = await supabase.auth.getUser();
         if (data?.user) {
-            setRole(data.user.user_metadata?.role || 'user');
-            
-            // Busca inicia de notificações não lidas
+            // Busca inicial de notificações não lidas
             const { count } = await supabase
                 .from('notifications')
                 .select('*', { count: 'exact', head: true })
@@ -53,20 +54,26 @@ export const Sidebar = React.memo(() => {
                     setUnreadNotifications(prev => prev + 1);
                 })
                 .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${data.user.id}` }, (payload) => {
-                     // Caso a notificação seja marcada como lida
                      if(payload.new.read === true) setUnreadNotifications(prev => Math.max(0, prev - 1));
                 })
                 .subscribe();
         }
     };
-    fetchInitialData();
+    fetchNotifications();
 
     return () => { if (channel) supabase.removeChannel(channel); };
   }, []);
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    navigate('/');
+    try {
+      await supabase.auth.signOut();
+    } catch (_) {
+      // Ignora erros de rede no signOut — limpa estado local de qualquer forma
+    } finally {
+      // Limpa a store global para garantir que não há estado preso
+      setAuthState(null, null);
+      navigate('/', { replace: true });
+    }
   };
 
   return (

@@ -87,3 +87,46 @@
     transform: translateY(0);
   }
 }
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInRight {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 5. Transição de Página — Aplicada em cada rota ao montar */
+@layer utilities {
+  .page-enter {
+    animation: pageEnter 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .animate-fadeInRight {
+    animation: fadeInRight 0.2s ease-out forwards;
+  }
+}
+
+/* 6. PWA: Remove tap highlight e garante scroll suave */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+}
+
+html {
+  scroll-behavior: smooth;
+}

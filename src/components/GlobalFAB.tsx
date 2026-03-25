@@ -1,13 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Plus, Edit3, Briefcase, Calendar, X, Globe, Lock, Loader2, Building, ExternalLink, Check } from 'lucide-react';
+import { Plus, Edit3, Briefcase, Calendar, X, Globe, Lock, Loader2, Building, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
+import { useStore } from '../store/useStore';
 
 export const GlobalFAB = () => {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
-    const [role, setRole] = useState('user');
-    const [userId, setUserId] = useState<string | null>(null);
+    // Lê do store global — zero query extra
+    const { userRole, currentUser } = useStore();
+    const role = userRole || 'user';
+    const userId = currentUser?.id || null;
 
     // Modal States
     const [activeModal, setActiveModal] = useState<'post' | 'event' | 'job' | null>(null);
@@ -17,17 +20,6 @@ export const GlobalFAB = () => {
     const [postContent, setPostContent] = useState('');
     const [newEvent, setNewEvent] = useState({ title: '', start_time: '', end_time: '', is_public: false });
     const [newJob, setNewJob] = useState({ company: '', link: '', description: '', isPremium: false });
-
-    // Fetch Role & ID
-    useEffect(() => {
-        supabase.auth.getUser().then(({ data }) => {
-            setUserId(data?.user?.id || null);
-            if (data?.user) {
-                supabase.from('profiles').select('role').eq('id', data.user.id).single()
-                    .then(({ data: profile }) => setRole(profile?.role || 'user'));
-            }
-        });
-    }, []);
 
     // Fechar ao clicar fora ou apertar Esc (UX refinada)
     useEffect(() => {
@@ -100,8 +92,12 @@ export const GlobalFAB = () => {
                 ? `[PREMIUM_JOB] [${newJob.company}] ${newJob.description}`
                 : `[${newJob.company}] ${newJob.description}`;
 
+            // title obrigatório — derivado da empresa + resumo da descrição
+            const titleData = `${newJob.company} — ${newJob.description.slice(0, 80)}${newJob.description.length > 80 ? '...' : ''}`;
+
             const { error } = await supabase.from('posts').insert({
                 user_id: userId,
+                title: titleData,
                 content: contentData,
                 type: 'vacancy',
                 link_url: formattedLink,

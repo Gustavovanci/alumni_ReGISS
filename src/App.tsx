@@ -1,5 +1,5 @@
 import React, { useEffect, useState, Suspense, lazy } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './components/Sidebar';
 import { supabase } from './lib/supabase';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -74,32 +74,33 @@ const PresenceTracker = () => {
   return null;
 };
 
-// Loading Secundário Discreto
+// Loader minimalista para transições de rota — transparente e sem pulsação
+// para a navegação parecer instantânea (chunks já estão no cache após 1º acesso)
 const GentleLoader = () => (
-  <div className="h-screen w-full flex items-center justify-center bg-transparent">
-    <img
-      src="/apple-touch-icon.png"
-      alt="..."
-      className="w-10 h-10 object-contain opacity-50 animate-pulse"
-    />
-  </div>
+  <div className="h-screen w-full bg-[#142239]" />
 );
 
 // Layout do "Organismo Social" (Com Menu Lateral)
-const SocialLayout = () => (
-  <ProtectedRoute>
-    <div className="min-h-screen bg-[#142239] text-slate-100 font-sans selection:bg-[#D5205D]/30">
-      <PresenceTracker />
-      <Sidebar />
-      <div className="pl-16 md:pl-20 min-h-screen relative">
-        <Suspense fallback={<GentleLoader />}>
-          <Outlet />
-        </Suspense>
+const SocialLayout = () => {
+  const { pathname } = useLocation();
+  return (
+    <ProtectedRoute>
+      <div className="min-h-screen bg-[#142239] text-slate-100 font-sans selection:bg-[#D5205D]/30">
+        <PresenceTracker />
+        <Sidebar />
+        <div className="pl-16 md:pl-20 min-h-screen relative">
+          <Suspense fallback={<GentleLoader />}>
+            {/* key no pathname garante animação de entrada a cada troca de rota */}
+            <div key={pathname} className="page-enter">
+              <Outlet />
+            </div>
+          </Suspense>
+        </div>
+        <GlobalFAB />
       </div>
-      <GlobalFAB />
-    </div>
-  </ProtectedRoute>
-);
+    </ProtectedRoute>
+  );
+};
 
 // Layout do Admin (Sem menu social, visão total focada em negócio)
 const AdminLayout = () => (
@@ -122,8 +123,10 @@ function App() {
 
   const { setAuthState } = useStore();
 
-  // Detecção heurística de celular vs desktop (Apenas User Agent, para não acionar no PC com tela dividida)
-  const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+  // Detecta mobile ou PWA standalone (Android em modo instalado tem UA diferente)
+  const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+    || window.matchMedia('(display-mode: standalone)').matches
+    || (navigator as any).standalone === true;
 
   useEffect(() => {
     let isMounted = true;
