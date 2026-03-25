@@ -10,11 +10,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    // Trocando a chave de armazenamento força o navegador a abandonar as 
-    // travas "LockManager" antigas presas pelo Hot Reload do React (HMR)
-    storageKey: 'alumnihc-auth-token-v2',
+    // [FIX ANDROID/PWA] Trocando para v3 e desabilitando o LockManager nativo
+    // para evitar o erro "Acquiring an exclusive Navigator LockManager Lock timeout"
+    storageKey: 'alumnihc-auth-token-v3',
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    // [NO-OP LOCK] Desativa a trava de abas que buga no Android WebView
+    lock: (name: any, acquire: any) => acquire()
   }
 })
