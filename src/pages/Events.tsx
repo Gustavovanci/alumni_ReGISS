@@ -162,15 +162,16 @@ export const Events = () => {
 
         const chunk = 100;
         for (let i = 0; i < targets.length; i += chunk) {
-          const batch = targets.slice(i, i + chunk).map(t => ({
-            user_id: t.id,
-            type: 'network_event',
-            title: 'Novo Evento na sua Rede',
-            content: `${userProfile.full_name?.split(' ')[0]} agendou: "${newEvent.title}"`,
-            read: false,
-            target_url: '/events'
-          }));
-          supabase.from('notifications').insert(batch).then();
+            const batch = targets.slice(i, i + chunk).map(t => ({
+              user_id: t.id,
+              actor_id: currentUser.id, // [FIX] Adicionado quem enviou
+              type: 'event',            // [FIX] Tipo corrigido
+              title: 'Novo Evento na sua Rede',
+              content: `${userProfile.full_name?.split(' ')[0]} agendou: "${newEvent.title}"`,
+              read: false,
+              target_url: '/events'
+            }));
+            await supabase.from('notifications').insert(batch);
         }
       }
 

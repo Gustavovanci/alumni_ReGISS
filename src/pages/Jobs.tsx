@@ -160,13 +160,14 @@ export const Jobs = () => {
         for (let i = 0; i < targets.length; i += chunk) {
           const batch = targets.slice(i, i + chunk).map(t => ({
             user_id: t.id,
-            type: 'network_job',
+            actor_id: user.id, // [FIX] Adicionado quem enviou
+            type: 'vacancy',    // [FIX] Tipo corrigido
             title: 'Nova Vaga na sua Rede',
             content: `${userProfile.full_name?.split(' ')[0]} divulgou uma vaga na empresa ${newJob.company}`,
             read: false,
             target_url: '/jobs'
           }));
-          supabase.from('notifications').insert(batch).then();
+          await supabase.from('notifications').insert(batch);
         }
       }
 

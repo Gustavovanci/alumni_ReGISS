@@ -67,13 +67,14 @@ export const GlobalFAB = () => {
                 for (let i = 0; i < targets.length; i += chunk) {
                     const batch = targets.slice(i, i + chunk).map(t => ({
                         user_id: t.id,
-                        type: 'network_post',
-                        title: 'Novo Post na sua Rede',
-                        content: `${userProfile.full_name?.split(' ')[0]} postou algo novo. Confira!`,
+                        actor_id: userId, // [FIX] Adicionado quem enviou
+                        type: 'post',     // [FIX] Tipo padronizado
+                        title: 'Nova Postagem na sua Rede',
+                        content: `${userProfile.full_name?.split(' ')[0]} postou algo novo no Feed`,
                         read: false,
                         target_url: '/feed'
                     }));
-                    supabase.from('notifications').insert(batch).then();
+                    await supabase.from('notifications').insert(batch);
                 }
             }
 
@@ -106,13 +107,14 @@ export const GlobalFAB = () => {
                 for (let i = 0; i < targets.length; i += chunk) {
                     const batch = targets.slice(i, i + chunk).map(t => ({
                         user_id: t.id,
-                        type: 'network_event',
+                        actor_id: userId, // [FIX] Adicionado quem enviou
+                        type: 'event',    // [FIX] Tipo corrigido
                         title: 'Novo Evento na sua Rede',
                         content: `${userProfile.full_name?.split(' ')[0]} agendou: "${newEvent.title}"`,
                         read: false,
                         target_url: '/events'
                     }));
-                    supabase.from('notifications').insert(batch).then();
+                    await supabase.from('notifications').insert(batch);
                 }
             }
 
@@ -166,13 +168,14 @@ export const GlobalFAB = () => {
                 for (let i = 0; i < targets.length; i += chunk) {
                     const batch = targets.slice(i, i + chunk).map(t => ({
                         user_id: t.id,
-                        type: 'network_job',
+                        actor_id: userId, // [FIX] Adicionado quem enviou
+                        type: 'vacancy',  // [FIX] Tipo corrigido
                         title: 'Nova Vaga na sua Rede',
                         content: `${userProfile.full_name?.split(' ')[0]} divulgou uma vaga na empresa ${newJob.company}`,
                         read: false,
                         target_url: '/jobs'
                     }));
-                    supabase.from('notifications').insert(batch).then();
+                    await supabase.from('notifications').insert(batch);
                 }
             }
 

@@ -7,6 +7,7 @@ import { getRegissStatus } from '../utils/regissLogic';
 import { PostCard } from '../components/PostCard';
 import { MiniCalendar } from '../components/MiniCalendar';
 import { NotificationMenu } from '../components/NotificationMenu';
+import { toast } from 'sonner';
 
 interface Profile {
   id: string; full_name: string; profession: string; job_title: string; entry_year: number; birth_date: string; interests: string[]; avatar_url?: string; theme_color?: string; role?: string;
@@ -107,7 +108,11 @@ export const Feed = () => {
       setHasNotifications(count !== null && count > 0);
       setSuggestedMatches(matches || []);
 
-    } catch (error) { console.error(error); } finally { setLoading(false); }
+    } catch (error) { 
+      console.error(error);
+      const errorMessage = error instanceof Error ? error.message : "Verifique sua conexão";
+      toast.error("Erro ao carregar dados: " + errorMessage);
+    } finally { setLoading(false); }
   };
 
   useEffect(() => {
