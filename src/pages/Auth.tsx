@@ -64,7 +64,7 @@ export const Auth = () => {
         // Checando código secreto para Coordenação
         const isCoord = secretCode.trim() === 'REGISS-COORD-2026';
 
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -73,6 +73,15 @@ export const Auth = () => {
         });
 
         if (error) throw error;
+
+        // Proteção Anti-Enumeração do Supabase: 
+        // Se o usuário já existe, não dá erro, mas retorna sem "identities".
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          toast.error('Este e-mail já está cadastrado! Por favor, faça login.');
+          setLoading(false);
+          return;
+        }
+
         toast.success(isCoord ? "Conta de Coordenação criada! Faça login." : "Conta criada com sucesso! Faça login.");
         setIsSignUp(false);
       } else {
