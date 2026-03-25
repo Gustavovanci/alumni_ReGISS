@@ -53,6 +53,9 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // Ativa o novo SW imediatamente em TODOS os clientes abertos (resolve desktop)
+        skipWaiting: true,
+        clientsClaim: true,
         // Limpa automaticamente caches de versões antigas do SW — resolve o bug do desktop
         cleanupOutdatedCaches: true,
         // Navegação SPA: redireciona todas as rotas não-arquivo para o index.html

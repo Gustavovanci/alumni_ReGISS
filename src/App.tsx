@@ -130,6 +130,19 @@ function App() {
     let initialCheckDone = false;
     const startTime = Date.now();
 
+    // TIMEOUT DE SEGURANÇA: Se o onAuthStateChange não disparar em 5s
+    // (lock de IndexedDB/BroadcastChannel travado — causa do loading eterno no desktop),
+    // força a liberação da tela para o usuário não ficar preso.
+    const safetyTimer = setTimeout(() => {
+      if (!initialCheckDone && isMounted) {
+        console.warn('[Auth] Timeout de segurança ativado — auth não respondeu em 5s. Liberando tela.');
+        initialCheckDone = true;
+        setAuthState(null, null); // garante isAuthReady: true na store
+        setSessionChecked(true);
+        setShowSplash(false);
+      }
+    }, 5000);
+
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (!isMounted) return;
       
@@ -158,6 +171,7 @@ function App() {
       // Libera a tela inicial APENAS na primeira vez que o evento for disparado
       if (!initialCheckDone && isMounted) {
         initialCheckDone = true;
+        clearTimeout(safetyTimer); // auth respondeu — cancela o timeout
         setSessionChecked(true);
 
         const elapsed = Date.now() - startTime;
@@ -177,6 +191,7 @@ function App() {
 
     return () => {
       isMounted = false;
+      clearTimeout(safetyTimer);
       authListener.subscription.unsubscribe();
     };
   }, []);
