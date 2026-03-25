@@ -126,53 +126,20 @@ export const GlobalFAB = () => {
             // title obrigatório — derivado da empresa + resumo da descrição
             const titleData = `${newJob.company} — ${newJob.description.slice(0, 80)}${newJob.description.length > 80 ? '...' : ''}`;
 
-            const postPromise = supabase.from('posts').insert({
+            const { error } = await supabase.from('posts').insert({
                 user_id: userId,
-                title: titleData,
-                content: contentData,
+                title: `${newJob.company} - Oportunidade`,
+                content: newJob.description,
                 type: 'vacancy',
                 link_url: formattedLink,
                 expires_at: expiresAt.toISOString()
             });
 
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error("Timeout no servidor (10s).")), 10000)
-            );
+            if (error) throw error;
 
-            const { error } = await Promise.race([postPromise, timeoutPromise]) as any;
-
-            if (error) {
-                console.error("Erro ao postar vaga:", error);
-                throw error;
-            }
-
-            toast.success("Vaga publicada com sucesso!");
+            toast.success("Vaga publicada!");
             setActiveModal(null);
             setNewJob({ description: '', link: '', company: '', isPremium: false });
-
-            // [BACKGROUND NOTIFICATIONS]
-            if (allProfiles.length > 0 && userProfile) {
-                (async () => {
-                    const targets = allProfiles.filter(p => 
-                        p.id !== userId && 
-                        (p.profession === userProfile.profession || p.entry_year === userProfile.entry_year)
-                    );
-
-                    const chunk = 100;
-                    for (let i = 0; i < targets.length; i += chunk) {
-                        const batch = targets.slice(i, i + chunk).map(t => ({
-                            user_id: t.id,
-                            actor_id: userId,
-                            type: 'vacancy',
-                            title: 'Nova Vaga na sua Rede',
-                            content: `${userProfile.full_name?.split(' ')[0]} divulgou uma vaga na empresa ${newJob.company}`,
-                            read: false,
-                            target_url: '/jobs'
-                        }));
-                        await supabase.from('notifications').insert(batch);
-                    }
-                })();
-            }
         } catch (error: any) {
             toast.error("Erro ao divulgar vaga: " + error.message);
         } finally {
