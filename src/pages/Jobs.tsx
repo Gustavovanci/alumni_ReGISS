@@ -133,8 +133,12 @@ export const Jobs = () => {
         ? `[PREMIUM_JOB] [${newJob.company}] ${newJob.description}`
         : `[${newJob.company}] ${newJob.description}`;
 
+      // title é obrigatório pelo schema — derivado da empresa + resumo da descrição
+      const titleData = `${newJob.company} — ${newJob.description.slice(0, 80)}${newJob.description.length > 80 ? '...' : ''}`;
+
       const { error } = await supabase.from('posts').insert({
         user_id: user.id,
+        title: titleData,
         content: contentData,
         type: 'vacancy',
         link_url: formattedLink,
@@ -296,7 +300,10 @@ export const Jobs = () => {
                           <Building size={28} />
                         </div>
                         <div className="flex-1 w-full">
-                          <h3 className={`font-bold text-xl leading-tight ${isPremium ? 'text-amber-50' : 'text-white'}`}>{job.title}</h3>
+                          <h3 className={`font-bold text-xl leading-tight ${isPremium ? 'text-amber-50' : 'text-white'}`}>
+                            {/* Fallback para vagas antigas sem campo title */}
+                            {job.title || displayContent?.split(']')[0]?.replace('[', '') || 'Vaga'}
+                          </h3>
                           <div className={`mt-3 text-sm leading-relaxed whitespace-pre-wrap ${isPremium ? 'text-amber-100/90' : 'text-slate-300'}`}>
                             {displayContent}
                           </div>

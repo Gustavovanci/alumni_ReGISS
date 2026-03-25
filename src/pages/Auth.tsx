@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Lock, Loader2 } from 'lucide-react';
+import { Mail, Lock, Loader2, Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 
 export const Auth = () => {
@@ -13,6 +13,7 @@ export const Auth = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
@@ -159,7 +160,10 @@ export const Auth = () => {
             <p className="text-slate-300 text-sm mb-4 text-center">Digite sua nova senha de acesso abaixo:</p>
             <div className="bg-[#142239] border border-white/10 rounded-xl flex items-center px-4 focus-within:border-[#D5205D] transition-colors">
               <Lock className="text-slate-500" size={20} />
-              <input type="password" placeholder="Nova Senha" required value={password} onChange={e => setPassword(e.target.value)} className="bg-transparent border-none w-full p-4 text-white outline-none" />
+              <input type={showPassword ? 'text' : 'password'} placeholder="Nova Senha" required value={password} onChange={e => setPassword(e.target.value)} className="bg-transparent border-none w-full p-4 text-white outline-none" />
+              <button type="button" onClick={() => setShowPassword(v => !v)} className="text-slate-500 hover:text-slate-300 transition-colors shrink-0 p-1">
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
             <button type="submit" disabled={loading} className="w-full bg-[#D5205D] hover:bg-pink-600 text-white font-bold py-4 rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 mt-6 disabled:opacity-70">
               {loading ? <Loader2 className="animate-spin" /> : 'Atualizar e Entrar'}
@@ -188,7 +192,10 @@ export const Auth = () => {
 
             <div className="bg-[#142239] border border-white/10 rounded-xl flex items-center px-4 focus-within:border-[#D5205D] transition-colors">
               <Lock className="text-slate-500" size={20} />
-              <input type="password" placeholder="Senha" required value={password} onChange={e => setPassword(e.target.value)} className="bg-transparent border-none w-full p-4 text-white outline-none" />
+              <input type={showPassword ? 'text' : 'password'} placeholder="Senha" required value={password} onChange={e => setPassword(e.target.value)} className="bg-transparent border-none w-full p-4 text-white outline-none" />
+              <button type="button" onClick={() => setShowPassword(v => !v)} className="text-slate-500 hover:text-slate-300 transition-colors shrink-0 p-1">
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
 
             {!isSignUp && (
