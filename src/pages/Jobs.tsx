@@ -139,19 +139,22 @@ export const Jobs = () => {
       const titleData = `${newJob.company} — ${newJob.description.slice(0, 80)}${newJob.description.length > 80 ? '...' : ''}`;
 
       const { error } = await supabase.from('posts').insert({
-        user_id: user.id,
-        title: titleData,
-        content: contentData,
-        type: 'vacancy',
-        link_url: formattedLink,
-        expires_at: expiresAt.toISOString()
-      });
+                user_id: user.id,
+                title: titleData,
+                content: contentData,
+                type: 'vacancy',
+                link_url: formattedLink,
+                expires_at: expiresAt.toISOString()
+            });
 
-      if (error) throw error;
+            if (error) {
+                console.error("Erro Supabase:", error);
+                throw new Error(error.message || "Erro de permissão ou esquema no banco.");
+            }
 
-      toast.success("Vaga divulgada com sucesso!");
-      setIsCreating(false);
-      setNewJob({ company: '', description: '', link: '', isPremium: false });
+            toast.success("Vaga divulgada com sucesso!");
+            setIsCreating(false);
+            setNewJob({ company: '', description: '', link: '', isPremium: false });
 
       // [BACKGROUND NOTIFICATIONS]
       if (allProfiles.length > 0 && userProfile) {
@@ -178,8 +181,8 @@ export const Jobs = () => {
       }
 
     } catch (error: any) {
-      console.error(error);
-      toast.error(error.message || "Falha ao postar vaga. Verifique sua conexão.");
+      console.error("Falha no post de vaga:", error);
+      toast.error(error.message || "Falha ao postar vaga. O script SQL de reparo foi executado?");
     } finally {
       setIsSubmitting(false);
     }

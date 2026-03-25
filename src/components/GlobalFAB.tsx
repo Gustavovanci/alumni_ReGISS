@@ -63,7 +63,8 @@ export const GlobalFAB = () => {
             setActiveModal(null);
             setPostContent('');
         } catch (error: any) {
-            toast.error("Erro ao publicar: " + error.message);
+            console.error("Erro ao postar:", error);
+            toast.error("Erro ao publicar: " + (error.message || "Erro de permissão"));
         } finally {
             setIsSubmitting(false);
         }
@@ -134,7 +135,10 @@ export const GlobalFAB = () => {
                 expires_at: expiresAt.toISOString()
             });
 
-            if (error) throw error;
+            if (error) {
+                console.error("Erro ao postar vaga:", error);
+                throw error;
+            }
 
             toast.success("Vaga publicada com sucesso!");
             setActiveModal(null);
