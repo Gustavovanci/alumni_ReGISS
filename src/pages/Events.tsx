@@ -153,12 +153,9 @@ export const Events = () => {
 
       if (error) throw error;
 
-      // [NOTIFICAÇÃO POR AFINIDADE]
-      if (allProfiles.length > 0 && userProfile && newEvent.is_public) {
-        const targets = allProfiles.filter(p => 
-          p.id !== currentUser.id && 
-          (p.profession === userProfile.profession || p.entry_year === userProfile.entry_year)
-        );
+        // [NOTIFICAÇÃO GLOBAL] Eventos Públicos notificam TODO MUNDO conforme feedback
+        if (allProfiles.length > 0 && userProfile && newEvent.is_public) {
+          const targets = allProfiles.filter(p => p.id !== currentUser.id);
 
         const chunk = 100;
         for (let i = 0; i < targets.length; i += chunk) {

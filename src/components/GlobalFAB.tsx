@@ -56,27 +56,8 @@ export const GlobalFAB = () => {
             const { error } = await supabase.from('posts').insert({ user_id: userId, content: postContent, type: 'general' });
             if (error) throw error;
 
-            // [NOTIFICAÇÃO POR AFINIDADE]
-            if (allProfiles.length > 0 && userProfile) {
-                const targets = allProfiles.filter(p => 
-                    p.id !== userId && 
-                    (p.profession === userProfile.profession || p.entry_year === userProfile.entry_year)
-                );
-
-                const chunk = 100;
-                for (let i = 0; i < targets.length; i += chunk) {
-                    const batch = targets.slice(i, i + chunk).map(t => ({
-                        user_id: t.id,
-                        actor_id: userId, // [FIX] Adicionado quem enviou
-                        type: 'post',     // [FIX] Tipo padronizado
-                        title: 'Nova Postagem na sua Rede',
-                        content: `${userProfile.full_name?.split(' ')[0]} postou algo novo no Feed`,
-                        read: false,
-                        target_url: '/feed'
-                    }));
-                    await supabase.from('notifications').insert(batch);
-                }
-            }
+            // [FEED-REFINEMENT] Posts comuns não disparam notificações (estilo Instagram)
+            // Basta o usuário rolar o feed para ver as novidades.
 
             toast.success("Post publicado com sucesso!");
             setActiveModal(null);
@@ -96,12 +77,9 @@ export const GlobalFAB = () => {
             const { error } = await supabase.from('events').insert([{ user_id: userId, ...newEvent }]);
             if (error) throw error;
 
-            // [NOTIFICAÇÃO POR AFINIDADE]
+            // [NOTIFICAÇÃO GLOBAL] Eventos Públicos notificam TODO MUNDO conforme feedback
             if (allProfiles.length > 0 && userProfile && newEvent.is_public) {
-                const targets = allProfiles.filter(p => 
-                    p.id !== userId && 
-                    (p.profession === userProfile.profession || p.entry_year === userProfile.entry_year)
-                );
+                const targets = allProfiles.filter(p => p.id !== userId);
 
                 const chunk = 100;
                 for (let i = 0; i < targets.length; i += chunk) {
