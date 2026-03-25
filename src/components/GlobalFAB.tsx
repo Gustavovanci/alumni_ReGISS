@@ -126,7 +126,7 @@ export const GlobalFAB = () => {
             // title obrigatório — derivado da empresa + resumo da descrição
             const titleData = `${newJob.company} — ${newJob.description.slice(0, 80)}${newJob.description.length > 80 ? '...' : ''}`;
 
-            const { error } = await supabase.from('posts').insert({
+            const postPromise = supabase.from('posts').insert({
                 user_id: userId,
                 title: titleData,
                 content: contentData,
@@ -134,6 +134,12 @@ export const GlobalFAB = () => {
                 link_url: formattedLink,
                 expires_at: expiresAt.toISOString()
             });
+
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error("Timeout no servidor (10s).")), 10000)
+            );
+
+            const { error } = await Promise.race([postPromise, timeoutPromise]) as any;
 
             if (error) {
                 console.error("Erro ao postar vaga:", error);
