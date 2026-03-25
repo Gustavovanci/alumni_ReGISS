@@ -11,7 +11,7 @@ interface StoreState {
     // 1. Cache do Usuário
     userProfile: any | null;
     setUserProfile: (profile: any) => void;
-    fetchUserProfile: () => Promise<void>;
+    fetchUserProfile: (force?: boolean) => Promise<void>;
 
     // 2. Cache da Rede (Para Comunidades e Network)
     allProfiles: any[];
@@ -36,9 +36,9 @@ export const useStore = create<StoreState>((set, get) => ({
     userProfile: null,
     setUserProfile: (profile) => set({ userProfile: profile }),
 
-    fetchUserProfile: async () => {
-        // Se já temos o perfil, não gasta rede
-        if (get().userProfile) return;
+    fetchUserProfile: async (force = false) => {
+        // Se já temos o perfil e não é um force refresh, não gasta rede
+        if (get().userProfile && !force) return;
 
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {

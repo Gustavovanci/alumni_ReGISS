@@ -4,11 +4,13 @@ import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { getRegissStatus } from '../utils/regissLogic';
 import { StarRating } from '../components/StarRating';
+import { useStore } from '../store/useStore';
 
 export const Onboarding = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const { fetchUserProfile } = useStore();
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: (currentYear + 1) - 2019 + 1 }, (_, i) => 2019 + i).reverse();
@@ -107,8 +109,12 @@ export const Onboarding = () => {
       }
 
       if (userRole === 'coordinator') {
+        // [FIX] Força o refresh do perfil na store global
+        await fetchUserProfile(true);
         navigate('/coordination');
       } else {
+        // [FIX] Força o refresh do perfil na store global
+        await fetchUserProfile(true);
         navigate('/feed');
       }
     } catch (error: any) {

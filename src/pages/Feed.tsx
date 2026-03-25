@@ -38,7 +38,6 @@ const FeedSkeleton = () => (
 export const Feed = () => {
   const navigate = useNavigate();
   const { userProfile, feedPosts, setFeedPosts, fetchUserProfile, fetchInitialFeed } = useStore();
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [suggestedMatches, setSuggestedMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState('');
@@ -66,7 +65,6 @@ export const Feed = () => {
       const profileData = useStore.getState().userProfile;
       if (!profileData?.profession) { navigate('/onboarding'); return; }
 
-      setProfile(profileData);
       setIsAdmin(profileData.role === 'admin');
 
       const currentStatus = getRegissStatus(profileData.entry_year, profileData.role);
@@ -141,7 +139,7 @@ export const Feed = () => {
 
   const handleCreatePost = async () => {
     if (!newPostContent.trim()) return;
-    const { error } = await supabase.from('posts').insert({ user_id: profile?.id, content: newPostContent, type: 'general' });
+    const { error } = await supabase.from('posts').insert({ user_id: userProfile?.id, content: newPostContent, type: 'general' });
     if (!error) {
       setNewPostContent('');
       // Não precisa de fetchData(), o Realtime vai injetar o post!
@@ -164,7 +162,7 @@ export const Feed = () => {
     }
   };
 
-  const userTheme = profile?.theme_color || 'regiss-magenta';
+  const userTheme = userProfile?.theme_color || 'regiss-magenta';
   const themeBgClass = userTheme === 'regiss-petrol' ? 'bg-[#275A80]' : userTheme === 'regiss-wine' ? 'bg-[#B32F50]' : 'bg-[#D5205D]';
   const themeFromClass = userTheme === 'regiss-petrol' ? 'from-[#275A80]' : userTheme === 'regiss-wine' ? 'from-[#B32F50]' : 'from-[#D5205D]';
 
@@ -208,15 +206,15 @@ export const Feed = () => {
                 <div className="flex flex-col items-center relative z-10 -mt-2">
                   <div className="relative">
                     <div className={`w-24 h-24 bg-[#142239] rounded-full p-1 border-4 ${statusTag.border} shadow-2xl mb-3 overflow-hidden`}>
-                      {profile?.avatar_url ? <img src={profile.avatar_url} alt="Profile" className="w-full h-full rounded-full object-cover" /> : <div className="w-full h-full bg-slate-700 rounded-full flex items-center justify-center text-3xl font-bold text-slate-400 uppercase">{profile?.full_name?.charAt(0)}</div>}
+                      {userProfile?.avatar_url ? <img src={userProfile.avatar_url} alt="Profile" className="w-full h-full rounded-full object-cover" /> : <div className="w-full h-full bg-slate-700 rounded-full flex items-center justify-center text-3xl font-bold text-slate-400 uppercase">{userProfile?.full_name?.charAt(0)}</div>}
                     </div>
                   </div>
-                  <h2 className="text-lg font-bold text-white text-center">{profile?.full_name}</h2>
+                  <h2 className="text-lg font-bold text-white text-center">{userProfile?.full_name}</h2>
                   <div className="mt-2"><span className={`${statusTag.color} ${statusTag.glow} text-xs font-black px-4 py-1.5 rounded-full uppercase tracking-widest border border-white/10`}>{statusTag.label}</span></div>
                   <div className="w-full mt-6 space-y-3 pt-6 border-t border-white/5 text-sm text-slate-300">
-                    <p className="flex items-center gap-2"><Briefcase size={14} className="text-[#D5205D]" /> <span className="font-medium text-white">{statusTag.defaultRole || profile?.job_title}</span></p>
-                    {profile?.role !== 'coordinator' && profile?.role !== 'admin' && (
-                      <p className="flex items-center gap-2"><GraduationCap size={14} className="text-[#275A80]" /> Turma {profile?.entry_year}</p>
+                    <p className="flex items-center gap-2"><Briefcase size={14} className="text-[#D5205D]" /> <span className="font-medium text-white">{statusTag.defaultRole || userProfile?.job_title}</span></p>
+                    {userProfile?.role !== 'coordinator' && userProfile?.role !== 'admin' && (
+                      <p className="flex items-center gap-2"><GraduationCap size={14} className="text-[#275A80]" /> Turma {userProfile?.entry_year}</p>
                     )}
                   </div>
                   <div className="w-full mt-6 space-y-3">
@@ -240,7 +238,7 @@ export const Feed = () => {
                   <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2 mb-1"><Sparkles className="text-white/80 w-4 h-4" /><span className="text-white/70 text-xs font-bold uppercase tracking-widest">Bem-vindo(a) de volta</span></div>
-                      <h2 className="text-2xl font-bold text-white">Olá, {profile?.full_name?.split(' ')[0]}.</h2>
+                      <h2 className="text-2xl font-bold text-white">Olá, {userProfile?.full_name?.split(' ')[0] || 'Alumni'}.</h2>
                     </div>
                   </div>
                 </div>
@@ -277,7 +275,7 @@ export const Feed = () => {
                   {/* O INPUT DE CRIAR POST COM AUTO-RESIZE */}
                   <div className="bg-[#15335E] border-y md:border border-white/5 rounded-none md:rounded-3xl p-5 shadow-xl mb-4 md:mb-8">
                     <div className="flex gap-4">
-                      <div className="w-12 h-12 rounded-full bg-[#142239] flex-shrink-0 flex items-center justify-center font-bold text-slate-400 border border-white/5 overflow-hidden shadow-inner">{profile?.avatar_url ? <img src={profile.avatar_url} className="w-full h-full object-cover" alt="Me" /> : profile?.full_name?.charAt(0)}</div>
+                      <div className="w-12 h-12 rounded-full bg-[#142239] flex-shrink-0 flex items-center justify-center font-bold text-slate-400 border border-white/5 overflow-hidden shadow-inner">{userProfile?.avatar_url ? <img src={userProfile.avatar_url} className="w-full h-full object-cover" alt="Me" /> : userProfile?.full_name?.charAt(0)}</div>
                       <textarea
                         value={newPostContent}
                         onChange={e => {
@@ -304,7 +302,7 @@ export const Feed = () => {
             {!loading && <MiniCalendar />}
 
             {/* Oculta sugestões de amizade se for coordenação ou admin */}
-            {!loading && profile?.role !== 'coordination' && !isAdmin && (
+            {!loading && userProfile?.role !== 'coordination' && !isAdmin && (
               <div className="bg-[#15335E] border border-white/5 rounded-3xl p-6 shadow-xl sticky top-[340px]">
                 <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-white flex items-center gap-2"><Sparkles size={18} className="text-[#D5205D]" /> Sugestões para Você</h3></div>
                 <div className="space-y-4">

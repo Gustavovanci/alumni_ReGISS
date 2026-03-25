@@ -3,12 +3,14 @@ import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { Save, Plus, Briefcase, GraduationCap, Trash2, Camera, Palette, Send, Edit3, Award, MessageCircle, Lock, Loader2 } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
+import { useStore } from '../store/useStore';
 
 export const MyJourney = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const { fetchUserProfile } = useStore();
 
   // Estados do Perfil
   const [fullName, setFullName] = useState(''); // <-- NOVO ESTADO PARA O NOME
@@ -84,7 +86,13 @@ export const MyJourney = () => {
       bio, linkedin_url: linkedin, avatar_url: avatarUrl, theme_color: themeColor, interests, whatsapp, whatsapp_authorized: !!whatsapp
     }).eq('id', user.id);
 
-    if (error) alert('Erro ao salvar o perfil'); else { alert('Perfil atualizado com sucesso!'); navigate('/feed'); }
+    if (error) alert('Erro ao salvar o perfil'); 
+    else { 
+      // [FIX] Força o refresh do perfil na store global
+      await fetchUserProfile(true);
+      alert('Perfil atualizado com sucesso!'); 
+      navigate('/feed'); 
+    }
   };
 
   const handleUpdatePassword = async () => {
