@@ -17,6 +17,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     detectSessionInUrl: true,
     // [NO-OP LOCK] Desativa a trava de abas que buga no Android WebView
-    lock: (name: any, acquire: any) => acquire()
+    // Versão ultra-robusta: busca o callback de aquisição em qualquer argumento
+    lock: (...args: any[]) => {
+      const acquire = args.find(a => typeof a === 'function');
+      return acquire ? acquire() : Promise.resolve();
+    }
   }
 })
