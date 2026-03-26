@@ -66,7 +66,9 @@ export const Communities = () => {
             })
             .subscribe();
 
-        return () => supabase.removeChannel(channel);
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [selectedCommunity]);
 
     // Realtime para comentários
@@ -82,7 +84,9 @@ export const Communities = () => {
             })
             .subscribe();
 
-        return () => supabase.removeChannel(channel);
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [selectedPost]);
 
     useEffect(() => {

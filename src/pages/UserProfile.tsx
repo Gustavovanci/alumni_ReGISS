@@ -62,10 +62,8 @@ export const UserProfile = () => {
     );
   }
 
-  const isCoordinator = profile.role === 'coordination';
-  const status = isCoordinator
-    ? { label: 'ÁREA TÉCNICA', color: 'bg-amber-500/20 text-amber-500', border: 'border-amber-500/30' }
-    : getRegissStatus(profile.entry_year, profile.role);
+  const isCoordinator = profile.role === 'coordination' || profile.role === 'coordinator';
+  const status = getRegissStatus(profile.entry_year, profile.role);
 
   const themeColor = profile.theme_color || 'regiss-magenta';
   const themeBg = themeColor === 'regiss-petrol' ? 'bg-[#275A80]' : themeColor === 'regiss-wine' ? 'bg-[#B32F50]' : 'bg-[#D5205D]';

@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
-import { Heart, Trash2, MessageCircle, Send, Loader2 } from 'lucide-react';
+import { Heart, Trash2, MessageCircle, Send, Loader2, ExternalLink } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
+import { toast } from 'sonner';
 
 type Post = {
   id: string;

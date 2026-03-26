@@ -1,6 +1,7 @@
 import React from 'react';
-import { Briefcase, GraduationCap, Users } from 'lucide-react';
+import { ExternalLink, MessageCircle, Heart, Share2, Trash2, MoreHorizontal, ShieldCheck, Mail, Linkedin, GraduationCap, Briefcase } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { getRegissStatus } from '../utils/regissLogic';
 
 interface UserCardProps {
@@ -24,9 +25,7 @@ export const UserCard: React.FC<UserCardProps> = ({
 }) => {
   const navigate = useNavigate();
 
-  const status = role === 'coordination'
-    ? { label: 'ÁREA TÉCNICA', color: 'bg-amber-500/20 text-amber-500', border: 'border-amber-500/30' }
-    : getRegissStatus(entry_year || 0, role);
+  const status = getRegissStatus(entry_year || 0, role);
 
   return (
     <div
