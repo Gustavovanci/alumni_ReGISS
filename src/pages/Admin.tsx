@@ -5,8 +5,8 @@ import {
    Shield, Users, Briefcase, Building, Search, Trash2, Key, Activity,
    Lock, Megaphone, Plus, Link as LinkIcon, AlertTriangle, Target,
    Server, BarChart3, Globe, Database, FileText, ImageIcon,
-   FileSearch, UserPlus, Award, Edit3, Save
-} from 'lucide-react';
+   FileSearch, UserPlus, Award, Edit3, Save, Loader2
+} from 'lucide-react'; // Loader2 adicionado aqui
 import { toast } from 'sonner';
 import { useStore } from '../store/useStore';
 
@@ -23,7 +23,7 @@ export const Admin = () => {
    const [leadsList, setLeadsList] = useState<any[]>([]);
    const [postsList, setPostsList] = useState<any[]>([]);
    const [updatesList, setUpdatesList] = useState<any[]>([]);
-   const [regissList, setRegissList] = useState<any[]>([]); // Nova lista de marcos
+   const [regissList, setRegissList] = useState<any[]>([]);
 
    const [searchTerm, setSearchTerm] = useState('');
    const [savingId, setSavingId] = useState<string | null>(null);
@@ -53,7 +53,7 @@ export const Admin = () => {
       if (activeTab === 'users') fetchUsers();
       if (activeTab === 'companies') fetchLeads();
       if (activeTab === 'content') fetchPosts();
-      if (activeTab === 'milestones') fetchRegissItems(); // Gatilho da nova aba
+      if (activeTab === 'milestones') fetchRegissItems();
       if (activeTab === 'system') fetchUpdates();
       if (activeTab === 'recruitment') fetchB2BJobs();
 
@@ -72,9 +72,6 @@ export const Admin = () => {
       }
    };
 
-   // ==========================================
-   // REQUISIÇÕES SUPABASE (CRUD COMPLETO)
-   // ==========================================
    const fetchStats = async () => {
       const [
          { count: uCount },
@@ -113,7 +110,6 @@ export const Admin = () => {
       setUpdatesList(data || []);
    };
 
-   // --- NOVA FUNÇÃO: BUSCAR MARCOS REGISS ---
    const fetchRegissItems = async () => {
       const { data, error } = await supabase
          .from('career_journey')
@@ -125,7 +121,6 @@ export const Admin = () => {
       else setRegissList(data || []);
    };
 
-   // --- NOVA FUNÇÃO: ATUALIZAR MARCO ---
    const handleUpdateRegissTitle = async (id: string, newTitle: string) => {
       setSavingId(id);
       const { error } = await supabase.from('career_journey').update({ title: newTitle }).eq('id', id);
@@ -137,7 +132,6 @@ export const Admin = () => {
       setSavingId(null);
    };
 
-   // AÇÕES DE USUÁRIOS
    const handleDeleteUser = async (id: string) => {
       if (!confirm("Atenção: Isso apagará o usuário e todos os seus dados. Continuar?")) return;
       await supabase.from('profiles').delete().eq('id', id);
@@ -145,7 +139,6 @@ export const Admin = () => {
       toast.success("Usuário removido do sistema.");
    };
 
-   // AÇÕES DE EMPRESAS
    const handleApproveCompany = async (lead: any) => {
       const inviteCode = 'B2B-' + Math.random().toString(36).substring(2, 8).toUpperCase();
       const { error } = await supabase.from('company_invites').insert({ code: inviteCode, company_name: lead.company_name });
@@ -180,7 +173,6 @@ export const Admin = () => {
          fetchUpdates();
          toast.success("Comunicado publicado!");
 
-         // [BACKGROUND NOTIFICATIONS]
          (async () => {
             try {
                const { data: users } = await supabase.from('profiles').select('id');
@@ -231,19 +223,13 @@ export const Admin = () => {
          if (!profiles) throw new Error("Não foi possível carregar os alunos.");
 
          const requiredTags = job.job_tags || [];
-         if (requiredTags.length === 0) {
-            setSuggestedTalents(profiles.map(p => ({ ...p, match_score: 0 })));
-            setIsCalculatingMatch(false);
-            return;
-         }
-
          const rankedProfiles = profiles.map(profile => {
             const userTags = (profile.interests || []).map((t: string) => t.toLowerCase());
             let score = 0;
             requiredTags.forEach((tag: string) => {
-               if (userTags.includes(tag)) score += 1;
+               if (userTags.includes(tag.toLowerCase())) score += 1;
             });
-            const percentage = Math.round((score / requiredTags.length) * 100);
+            const percentage = requiredTags.length > 0 ? Math.round((score / requiredTags.length) * 100) : 0;
             return { ...profile, match_score: percentage };
          });
 
@@ -292,7 +278,7 @@ export const Admin = () => {
                   { id: 'users', label: 'Base de Alunos', icon: Users },
                   { id: 'companies', label: 'B2B & Parceiros', icon: Building },
                   { id: 'content', label: 'Moderação (Feed)', icon: Database },
-                  { id: 'milestones', label: 'Marcos ReGISS', icon: Award }, // Nova aba adicionada
+                  { id: 'milestones', label: 'Marcos ReGISS', icon: Award },
                   { id: 'system', label: 'Sistema & Alertas', icon: Server },
                   { id: 'recruitment', label: 'Match/Recrutamento', icon: Target },
                ].map(tab => (
@@ -317,7 +303,6 @@ export const Admin = () => {
                      <p className="text-slate-400 text-sm">Monitoramento em tempo real do ecossistema ReGISS.</p>
                   </div>
 
-                  {/* INDICADORES DE SISTEMA */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                      <div className="bg-[#142239] border border-green-500/30 p-5 rounded-2xl flex items-center gap-4">
                         <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center"><Activity className="text-green-500" /></div>
@@ -383,7 +368,6 @@ export const Admin = () => {
                </div>
             )}
 
-            {/* NOVA ABA: GESTÃO DE MARCOS REGISS */}
             {activeTab === 'milestones' && (
                <div className="animate-fadeIn space-y-6">
                   <div>
@@ -397,7 +381,7 @@ export const Admin = () => {
                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                            <input
                               type="text"
-                              placeholder="Buscar por nome ou título errado (ex: Fisioterapeuta)..."
+                              placeholder="Buscar por nome ou título errado..."
                               value={searchTerm}
                               onChange={(e) => setSearchTerm(e.target.value)}
                               className="w-full bg-[#0B1320] border border-white/10 p-4 pl-12 rounded-2xl outline-none focus:border-[#D5205D] text-white transition-all"
@@ -464,7 +448,6 @@ export const Admin = () => {
                </div>
             )}
 
-            {/* TAB CONTENT (MODERAÇÃO) */}
             {activeTab === 'content' && (
                <div className="space-y-6 animate-fadeIn">
                   <div className="flex justify-between items-center bg-[#142239] border border-blue-500/30 p-5 rounded-2xl shadow-lg">
@@ -476,7 +459,6 @@ export const Admin = () => {
                         </div>
                      </div>
                   </div>
-                  {/* Lógica de moderação já existente no seu código */}
                   {postsList.filter(p => p.content.includes('porra') || p.content.includes('caralho')).map(post => (
                      <div key={post.id} className="bg-[#142239] border border-red-500/30 p-5 rounded-2xl flex justify-between items-center gap-6">
                         <div className="flex-1">
@@ -489,7 +471,6 @@ export const Admin = () => {
                </div>
             )}
 
-            {/* RESTANTE DAS ABAS (COMPANIES, SYSTEM, RECRUITMENT) CONTINUAM IGUAIS... */}
             {activeTab === 'companies' && (
                <div className="animate-fadeIn space-y-6">
                   <h2 className="text-2xl font-bold text-white">Controle de Parceiros (B2B)</h2>
@@ -556,7 +537,7 @@ export const Admin = () => {
                   ) : (
                      <div className="bg-[#142239] p-8 rounded-3xl">
                         <button onClick={() => setSelectedJob(null)} className="text-slate-400 mb-6 flex items-center gap-2 font-bold">← Voltar</button>
-                        <h3 className="text-2xl font-bold mb-6">Match de Candidatos para: {selectedJob.title}</h3>
+                        <h3 className="text-2xl font-bold mb-6">Match de Candidatos</h3>
                         <div className="space-y-4">
                            {suggestedTalents.map(talent => (
                               <div key={talent.id} className="bg-[#0B1320] p-5 rounded-2xl flex items-center justify-between border border-white/5">
