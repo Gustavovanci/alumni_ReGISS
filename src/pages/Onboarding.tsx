@@ -33,6 +33,15 @@ export const Onboarding = () => {
   });
 
   const [tagInput, setTagInput] = useState('');
+  const [isCustomProfession, setIsCustomProfession] = useState(false);
+
+  const PROFESSIONS = [
+    'Fisioterapeuta',
+    'Nutricionista',
+    'Terapeuta Ocupacional',
+    'Fonoaudiólogo(a)',
+    'Enfermeiro(a)'
+  ];
 
   useEffect(() => {
     const checkProfile = async () => {
@@ -60,6 +69,23 @@ export const Onboarding = () => {
   const simulatedStatus = getRegissStatus(simulableYear, userRole);
   const isResident = simulatedStatus?.label === 'R1' || simulatedStatus?.label === 'R2';
 
+  // Lógica inteligente para corrigir o português do Marco da Residência
+  const getResidencyTitle = (profession: string) => {
+    const map: Record<string, string> = {
+      'Fisioterapeuta': 'Fisioterapia',
+      'Nutricionista': 'Nutrição',
+      'Terapeuta Ocupacional': 'Terapia Ocupacional',
+      'Fonoaudiólogo(a)': 'Fonoaudiologia',
+      'Enfermeiro(a)': 'Enfermagem',
+    };
+
+    const area = map[profession];
+    if (area) return `Residência em ${area}`;
+
+    // Fallback caso a pessoa digite uma profissão customizada
+    return `Residência em Gestão Integrada de Serviços de Saúde`;
+  };
+
   const handleFinish = async () => {
     setLoading(true);
     try {
@@ -84,11 +110,11 @@ export const Onboarding = () => {
 
       if (profileError) throw profileError;
 
-      // Adiciona marco ReGISS automaticamente
+      // Adiciona marco ReGISS automaticamente com a gramática correta
       if (userRole === 'user' && entryYearInt) {
         await supabase.from('career_journey').insert({
           user_id: user.id,
-          title: `Residência em Gestão Integrada de Serviços de Saúde (ReGISS)`,
+          title: getResidencyTitle(formData.profession),
           organization: 'HCFMUSP - ReGISS',
           type: 'regiss',
           start_date: `${entryYearInt}-03-01`,
@@ -191,7 +217,7 @@ export const Onboarding = () => {
                     <div>
                       <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Data de Nascimento</label>
                       <input
-                        type="date" // TIPO DATE NATIVO (Resolve o erro do loop)
+                        type="date"
                         value={formData.birthDate}
                         onChange={e => setFormData({ ...formData, birthDate: e.target.value })}
                         className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-2 text-white outline-none focus:border-[#D5205D] transition-all [color-scheme:dark]"
@@ -232,18 +258,52 @@ export const Onboarding = () => {
 
                   <div>
                     <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Sua Profissão Base</label>
-                    <input
-                      type="text"
-                      value={formData.profession}
-                      onChange={e => setFormData({ ...formData, profession: e.target.value })}
-                      className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-2 text-white outline-none focus:border-[#D5205D] transition-all placeholder:text-slate-600"
-                      placeholder="Ex: Fisioterapeuta, Enfermeiro, Médico..."
-                    />
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {PROFESSIONS.map(prof => (
+                        <button
+                          key={prof}
+                          type="button"
+                          onClick={() => {
+                            setFormData({ ...formData, profession: prof });
+                            setIsCustomProfession(false);
+                          }}
+                          className={`px-4 py-3 rounded-xl text-sm font-bold border transition-all ${formData.profession === prof && !isCustomProfession
+                              ? 'bg-[#D5205D] border-[#D5205D] text-white shadow-lg'
+                              : 'bg-[#142239] border-white/10 text-slate-400 hover:border-[#D5205D]/50'
+                            }`}
+                        >
+                          {prof}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, profession: '' });
+                          setIsCustomProfession(true);
+                        }}
+                        className={`px-4 py-3 rounded-xl text-sm font-bold border transition-all ${isCustomProfession
+                            ? 'bg-[#D5205D] border-[#D5205D] text-white shadow-lg'
+                            : 'bg-[#142239] border-white/10 text-slate-400 hover:border-[#D5205D]/50'
+                          }`}
+                      >
+                        Outra...
+                      </button>
+                    </div>
+
+                    {isCustomProfession && (
+                      <input
+                        type="text"
+                        value={formData.profession}
+                        onChange={e => setFormData({ ...formData, profession: e.target.value })}
+                        className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-4 text-white outline-none focus:border-[#D5205D] transition-all placeholder:text-slate-600 animate-in fade-in"
+                        placeholder="Digite sua profissão (Ex: Psicólogo(a), Farmacêutico(a)...)"
+                      />
+                    )}
                   </div>
 
                   {!isResident && (
                     <>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
                         <div>
                           <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Cargo Atual</label>
                           <input
@@ -267,7 +327,7 @@ export const Onboarding = () => {
                       </div>
 
                       {formData.company && (
-                        <div>
+                        <div className="animate-in fade-in">
                           <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Data de Início no Cargo</label>
                           <input
                             type="date"
@@ -281,7 +341,7 @@ export const Onboarding = () => {
                   )}
 
                   {isResident && (
-                    <div className="bg-[#142239] p-4 rounded-2xl border border-white/5 text-sm text-slate-400">
+                    <div className="bg-[#142239] p-4 rounded-2xl border border-white/5 text-sm text-slate-400 mt-4">
                       Como você informou que entrou em {formData.entryYear}, o sistema configurará seu cargo automaticamente como Residente no HCFMUSP.
                     </div>
                   )}
