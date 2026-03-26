@@ -1,58 +1,65 @@
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 
-// COLE SUA VAPID PUBLIC KEY AQUI DENTRO DAS ASPAS
 const PUBLIC_VAPID_KEY = 'BDorNWv1zkXMxijqymQhTI3YT_ycHKRnIDNMcEtIE0zXuMsrQovR02ycYhZbGPQ0RnRWq_-DYdifEeBU3BdvZb8';
 
 function urlBase64ToUint8Array(base64String: string) {
-    const padding = '='.repeat((4 - base64String.length % 4) % 4);
-    const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
-    const rawData = window.atob(base64);
-    const outputArray = new Uint8Array(rawData.length);
-    for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-    }
-    return outputArray;
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
 }
 
 export const subscribeToPushNotifications = async () => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-        toast.error('Seu navegador não suporta notificações Push.');
-        return;
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    toast.error('Seu navegador não suporta notificações Push.');
+    return;
+  }
+
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      toast.error('Permissão negada. Você não receberá alertas.');
+      return;
     }
 
-    try {
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') {
-            toast.error('Permissão negada. Você não receberá alertas.');
-            return;
-        }
+    const registration = await navigator.serviceWorker.ready;
+    
+    // Inscreve o aparelho
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
+    });
 
-        const registration = await navigator.serviceWorker.ready;
-
-        const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
-        });
-
-        const subData = JSON.parse(JSON.stringify(subscription));
-        const { data: { user } } = await supabase.auth.getUser();
-
-        if (!user) return;
-
-        // Salva no Supabase
-        const { error } = await supabase.from('push_subscriptions').upsert({
-            user_id: user.id,
-            endpoint: subData.endpoint,
-            auth: subData.keys.auth,
-            p256dh: subData.keys.p256dh
-        }, { onConflict: 'endpoint' });
-
-        if (error) throw error;
-
-        toast.success('Notificações ativadas! Você receberá alertas em tempo real. 🔔');
-    } catch (error: any) {
-        console.error('Erro ao assinar push:', error);
-        toast.error('Falha ao ativar notificações no dispositivo.');
+    const subData = JSON.parse(JSON.stringify(subscription));
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      toast.error('Erro de autenticação.');
+      return;
     }
+
+    // Salva no banco de dados
+    const { error } = await supabase.from('push_subscriptions').upsert({
+      user_id: user.id,
+      endpoint: subData.endpoint,
+      auth: subData.keys.auth,
+      p256dh: subData.keys.p256dh
+    }, { onConflict: 'endpoint' });
+
+    if (error) {
+      console.error('Erro no Supabase:', error);
+      toast.error('Falha ao salvar a inscrição no banco de dados.');
+      return;
+    }
+
+    toast.success('Notificações ativadas com sucesso! 🔔');
+  } catch (error: any) {
+    console.error('Erro geral ao assinar push:', error);
+    toast.error('Falha ao ativar notificações. Tente novamente mais tarde.');
+  }
 };
