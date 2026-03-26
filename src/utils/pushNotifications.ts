@@ -1,6 +1,7 @@
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 
+// COLE SUA VAPID PUBLIC KEY AQUI DENTRO DAS ASPAS
 const PUBLIC_VAPID_KEY = 'BDorNWv1zkXMxijqymQhTI3YT_ycHKRnIDNMcEtIE0zXuMsrQovR02ycYhZbGPQ0RnRWq_-DYdifEeBU3BdvZb8';
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -62,11 +63,18 @@ export const subscribeToPushNotifications = async () => {
   }
 };
 
-// --- NOVA FUNÇÃO DE DISPARO ---
+// --- NOVA FUNÇÃO DE DISPARO (BLINDADA CONTRA ERRO 401) ---
 export const sendPushNotification = async (title: string, body: string, url: string = '/jobs') => {
   try {
+    // 1. Pega o "crachá" (sessão) do usuário logado
+    const { data: { session } } = await supabase.auth.getSession();
+
+    // 2. Envia a requisição forçando o crachá no cabeçalho (Headers) para o Supabase não barrar
     const { data, error } = await supabase.functions.invoke('send-push', {
-      body: { title, body, url }
+      body: { title, body, url },
+      headers: {
+        Authorization: `Bearer ${session?.access_token}`
+      }
     });
 
     if (error) {
