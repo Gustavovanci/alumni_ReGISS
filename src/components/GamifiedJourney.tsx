@@ -2,88 +2,115 @@ import React from 'react';
 import { Briefcase, GraduationCap, Award } from 'lucide-react';
 
 interface JourneyItem {
-   id: string; title: string; organization: string; type: string; start_date: string; end_date: string; rating: number; pros?: string; cons?: string; benefits?: string[];
+   id: string;
+   title: string;
+   organization: string;
+   type: string;
+   start_date: string;
+   end_date: string | null;
+   rating: number;
 }
 
-export const GamifiedJourney = ({ items, entryYear, profession }: { items: JourneyItem[], entryYear: number, profession: string }) => {
-
-   // 1. Inserir o Marco ReGISS na linha do tempo, caso possua Ano de Ingresso
-   const timelineItems = items ? [...items] : [];
+export const GamifiedJourney = ({
+   items,
+   entryYear,
+   profession,
+}: {
+   items: JourneyItem[];
+   entryYear: number;
+   profession: string;
+}) => {
+   // Adiciona automaticamente o marco da Residência ReGISS
+   const timelineItems = [...items];
 
    if (entryYear) {
-      const regissMilestone = {
-         id: 'regiss-start',
-         title: `Início na Residência (${profession})`,
+      timelineItems.push({
+         id: 'regiss-milestone',
+         title: `Residência em ${profession}`,
          organization: 'HCFMUSP - ReGISS',
          type: 'regiss',
-         start_date: `${entryYear}-03-01`, // Data simbólica de início
-         end_date: '',
+         start_date: `${entryYear}-03-01`,
+         end_date: null,
          rating: 5,
-         isMilestone: true
-      };
-      timelineItems.push(regissMilestone);
+      });
    }
 
-   // 2. Mesclar e Ordenar (Do mais recente para o mais antigo)
-   const timeline = timelineItems.sort((a, b) => {
-      const dateA = a.start_date ? new Date(a.start_date).getTime() : 0;
-      const dateB = b.start_date ? new Date(b.start_date).getTime() : 0;
-      return dateB - dateA;
+   // Ordena do mais recente para o mais antigo
+   const sortedTimeline = timelineItems.sort((a, b) => {
+      return new Date(b.start_date).getTime() - new Date(a.start_date).getTime();
    });
 
-   if (items.length === 0 && !entryYear) return <p className="text-slate-500 italic p-4 text-center">Jornada ainda não iniciada.</p>;
+   if (sortedTimeline.length === 0) {
+      return (
+         <p className="text-slate-500 italic text-center py-8">
+            Nenhuma experiência cadastrada ainda.
+         </p>
+      );
+   }
 
    return (
       <div className="relative py-10 px-4">
-         {/* TRILHA (Linha conectora) */}
-         <div className="absolute left-8 top-6 bottom-6 w-1 bg-gradient-to-b from-regiss-magenta via-regiss-petrol to-regiss-deep/10 rounded-full"></div>
+         {/* Linha vertical da timeline */}
+         <div className="absolute left-8 top-4 bottom-4 w-1 bg-gradient-to-b from-[#D5205D] via-[#275A80] to-transparent rounded-full"></div>
 
-         {timeline.map((item: any) => {
+         {sortedTimeline.map((item) => {
             const isRegiss = item.type === 'regiss';
-            const isEducation = item.type === 'education';
             const year = new Date(item.start_date).getFullYear();
 
             return (
-               <div key={item.id} className="relative mb-8 pl-20 group">
-
-                  {/* NÓ DO CAMINHO (Bolinha) */}
-                  <div className={`absolute left-4 top-5 w-9 h-9 rounded-full border-4 border-regiss-deep z-10 flex items-center justify-center shadow-lg transition-all 
-                ${isRegiss ? 'bg-gradient-to-br from-regiss-magenta to-regiss-wine scale-110 shadow-neon' : isEducation ? 'bg-regiss-petrol' : 'bg-white'}`}>
-                     {isRegiss ? <Award size={16} className="text-white" /> : isEducation ? <GraduationCap size={14} className="text-white" /> : <Briefcase size={14} className="text-regiss-deep" />}
+               <div key={item.id} className="relative mb-12 pl-20 group">
+                  {/* Bolinha da timeline */}
+                  <div
+                     className={`absolute left-4 top-2 w-9 h-9 rounded-2xl border-4 border-[#142239] flex items-center justify-center z-10 shadow-lg transition-all
+                ${isRegiss
+                           ? 'bg-gradient-to-br from-[#D5205D] to-[#B32F50] scale-110 shadow-neon'
+                           : 'bg-[#15335E]'
+                        }`}
+                  >
+                     {isRegiss ? (
+                        <Award size={18} className="text-white" />
+                     ) : item.type === 'education' || item.type === 'graduation' || item.type === 'postgrad' ? (
+                        <GraduationCap size={18} className="text-[#275A80]" />
+                     ) : (
+                        <Briefcase size={18} className="text-[#D5205D]" />
+                     )}
                   </div>
 
-                  {/* CARD SIMPLES (Sem Glassdoor Expansível) */}
+                  {/* Card */}
                   <div
-                     className={`
-                  border rounded-2xl p-5 relative ml-4 transition-all duration-300
-                  ${isRegiss ? 'bg-regiss-card/80 border-regiss-magenta/50 shadow-[0_0_15px_rgba(213,32,93,0.15)]' : 'bg-regiss-card border-white/5 hover:border-white/20 shadow-lg'}
-               `}
+                     className={`border rounded-3xl p-6 transition-all duration-300 shadow-lg
+                ${isRegiss
+                           ? 'bg-[#15335E] border-[#D5205D]/40 shadow-neon'
+                           : 'bg-[#15335E] border-white/10 hover:border-white/20'
+                        }`}
                   >
-                     {/* Cabeçalho do Card (Sempre Visível) */}
                      <div className="flex justify-between items-start">
-                        <div>
-                           <h3 className={`font-bold text-lg ${isRegiss ? 'text-regiss-magenta' : 'text-white'}`}>{item.title}</h3>
-                           <p className={`font-bold text-sm ${isRegiss ? 'text-white' : isEducation ? 'text-regiss-petrol' : 'text-slate-300'}`}>{item.organization}</p>
+                        <div className="flex-1">
+                           <h3 className={`font-bold text-lg ${isRegiss ? 'text-[#D5205D]' : 'text-white'}`}>
+                              {item.title}
+                           </h3>
+                           <p className="text-slate-400 text-sm mt-1">{item.organization}</p>
+                        </div>
 
-                           {/* Ano / Data */}
-                           <p className="text-xs text-slate-500 mt-1 font-mono flex items-center gap-2">
+                        <div className="text-right">
+                           <span className="text-xs font-mono text-slate-500 block">
                               {year}
                               {item.end_date && ` — ${new Date(item.end_date).getFullYear()}`}
-                              {isRegiss && <span className="bg-regiss-magenta/20 text-regiss-magenta px-2 py-0.5 rounded text-[10px] font-bold uppercase">Marco ReGISS</span>}
-                           </p>
+                           </span>
+                           {isRegiss && (
+                              <span className="inline-block mt-2 bg-[#D5205D]/10 text-[#D5205D] text-[10px] font-bold px-3 py-1 rounded-full">
+                                 MARCO ReGISS
+                              </span>
+                           )}
                         </div>
                      </div>
-
-                     {/* Benefícios (Mantidos PÚBLICOS como marcadores de cultura das empresas?) 
-                    O usuário pediu para tirar o Glassdoor. Os benefícios não revelam sentimento. 
-                    Por via das dúvidas, vamos ocultar os benefícios do painel público também para deixar a interface clean. */}
                   </div>
                </div>
             );
          })}
 
-         {/* FIM DO CAMINHO */}
-         <div className="absolute left-[30px] bottom-0 w-2 h-2 bg-regiss-deep rounded-full border border-white/20"></div>
+         {/* Fim da timeline */}
+         <div className="absolute left-[30px] bottom-0 w-3 h-3 bg-[#D5205D] rounded-full border-2 border-[#142239]"></div>
       </div>
    );
 };

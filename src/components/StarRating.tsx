@@ -5,30 +5,42 @@ interface StarRatingProps {
   rating: number;
   setRating?: (rating: number) => void;
   readonly?: boolean;
+  size?: number;
 }
 
-export const StarRating = ({ rating, setRating, readonly = false }: StarRatingProps) => {
+export const StarRating = ({
+  rating,
+  setRating,
+  readonly = false,
+  size = 28,
+}: StarRatingProps) => {
   const [hover, setHover] = useState(0);
 
   return (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map((star) => {
-        const isActive = (hover || rating) >= star;
+        const currentValue = hover || rating;
+        const isActive = currentValue >= star;
+
         return (
           <button
             key={star}
             type="button"
             disabled={readonly}
-            className={`transition-all duration-200 transform ${readonly ? '' : 'hover:scale-110'} ${isActive ? 'text-yellow-400' : 'text-slate-600'
-              } ${readonly ? 'cursor-default' : 'cursor-pointer'}`}
             onClick={() => !readonly && setRating && setRating(star)}
             onMouseEnter={() => !readonly && setHover(star)}
             onMouseLeave={() => !readonly && setHover(0)}
+            className={`transition-all duration-200 ${readonly ? 'cursor-default' : 'cursor-pointer hover:scale-110'
+              }`}
           >
             <Star
-              size={28}
-              className={isActive ? 'drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]' : ''}
+              size={size}
+              className={`transition-all ${isActive
+                  ? 'text-yellow-400 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]'
+                  : 'text-slate-600'
+                }`}
               fill={isActive ? 'currentColor' : 'none'}
+              strokeWidth={1.5}
             />
           </button>
         );

@@ -2,32 +2,26 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 
 interface StoreState {
-    // 0. Auth State Centralizado (Elimina queries duplicadas no ProtectedRoute)
     currentUser: any | null;
     userRole: string | null;
     isAuthReady: boolean;
     setAuthState: (user: any | null, role: string | null) => void;
 
-    // 1. Cache do Usuário
     userProfile: any | null;
     setUserProfile: (profile: any) => void;
     fetchUserProfile: (force?: boolean) => Promise<void>;
 
-    // 2. Cache da Rede (Para Comunidades e Network)
     allProfiles: any[];
     fetchAllProfiles: () => Promise<void>;
 
-    // 3. Cache de Posts do Feed (Para não recarregar a tela inteira sempre)
     feedPosts: any[];
     setFeedPosts: (posts: any[]) => void;
     fetchInitialFeed: () => Promise<void>;
 
-    // 4. Status Global de Loading Inicial
     isGlobalLoading: boolean;
 }
 
 export const useStore = create<StoreState>((set, get) => ({
-    // 0. Auth State Centralizado
     currentUser: null,
     userRole: null,
     isAuthReady: false,
@@ -37,7 +31,6 @@ export const useStore = create<StoreState>((set, get) => ({
     setUserProfile: (profile) => set({ userProfile: profile }),
 
     fetchUserProfile: async (force = false) => {
-        // Se já temos o perfil e não é um force refresh, não gasta rede
         if (get().userProfile && !force) return;
 
         const { data: { user } } = await supabase.auth.getUser();
@@ -51,38 +44,26 @@ export const useStore = create<StoreState>((set, get) => ({
 
     allProfiles: [],
     fetchAllProfiles: async () => {
-        // Se já tem cache, não busca de novo (Mata o 'Vilão da Amnésia')
         if (get().allProfiles.length > 0) return;
-
-        // TODO: Num app bilionário, isso aqui teria paginação. Mas pro MVP beta, .limit(1000) salva do colapso
-        const { data } = await supabase.from('profiles').select('id, full_name, profession, entry_year, role, avatar_url, job_title').limit(1500);
-        if (data) {
-            set({ allProfiles: data });
-        }
+        const { data } = await supabase
+            .from('profiles')
+            .select('id, full_name, profession, entry_year, role, avatar_url, job_title')
+            .limit(1500);
+        if (data) set({ allProfiles: data });
     },
 
     feedPosts: [],
     setFeedPosts: (posts) => set({ feedPosts: posts }),
     fetchInitialFeed: async () => {
-        // Vilão da Gula morto: Limit(20) garante carregamento leve
-        if (get().feedPosts.length > 0) return; // Se já desceu o feed, mantém cache
-
+        if (get().feedPosts.length > 0) return;
         const { data } = await supabase
             .from('posts')
-            .select(`
-        *,
-        profiles (
-          full_name, profession, entry_year, job_title, avatar_url, role
-        )
-      `)
+            .select('*, profiles(full_name, profession, entry_year, job_title, avatar_url, role)')
             .eq('type', 'general')
             .order('created_at', { ascending: false })
             .limit(20);
-
-        if (data) {
-            set({ feedPosts: data });
-        }
+        if (data) set({ feedPosts: data });
     },
 
-    isGlobalLoading: false
+    isGlobalLoading: false,
 }));

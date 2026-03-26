@@ -173,10 +173,10 @@ export const Admin = () => {
 
    const handleCreateUpdate = async () => {
       if (!newUpdate.title || !newUpdate.content) return toast.error("Título e Texto são obrigatórios.");
-      
+
       const { data: { user: adminUser } } = await supabase.auth.getUser();
       const { error } = await supabase.from('system_updates').insert([newUpdate]);
-      
+
       if (!error) {
          setNewUpdate({ title: '', content: '', link_url: '', image_url: '' });
          setIsCreatingUpdate(false);
