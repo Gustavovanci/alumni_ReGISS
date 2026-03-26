@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, Check, Plus, Award, Loader2 } from 'lucide-react';
+import { ChevronRight, Check, Plus, Award, Loader2, X } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { getRegissStatus } from '../utils/regissLogic';
@@ -70,17 +70,12 @@ export const Onboarding = () => {
       const finalJobTitle = (userRole === 'user' && isResident) ? simulatedStatus?.defaultRole : formData.jobTitle;
       const finalCompany = (userRole === 'user' && isResident) ? 'HCFMUSP' : formData.company;
 
-      let formattedBirthDate = formData.birthDate;
-      if (formattedBirthDate.includes('/')) {
-        const [day, month, year] = formattedBirthDate.split('/');
-        formattedBirthDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-      }
-
+      // Atualiza o perfil no banco de dados (birthDate já vai no formato YYYY-MM-DD)
       const { error: profileError } = await supabase.from('profiles').update({
         full_name: formData.fullName.trim(),
         profession: formData.profession,
         entry_year: entryYearInt,
-        birth_date: formattedBirthDate,
+        birth_date: formData.birthDate,
         job_title: finalJobTitle,
         current_company: finalCompany,
         interests: formData.interests,
@@ -102,7 +97,7 @@ export const Onboarding = () => {
         });
       }
 
-      // Adiciona emprego atual (se não for residente)
+      // Adiciona emprego atual (se preenchido e não for residente)
       if (formData.jobTitle && formData.company && formData.jobStartDate && (!isResident || userRole === 'coordinator')) {
         await supabase.from('career_journey').insert({
           user_id: user.id,
@@ -122,6 +117,7 @@ export const Onboarding = () => {
       toast.success('Perfil configurado com sucesso!');
       if (userRole === 'coordinator') navigate('/coordination');
       else navigate('/feed');
+
     } catch (error: any) {
       toast.error(error.message || 'Erro ao finalizar onboarding');
     } finally {
@@ -136,76 +132,78 @@ export const Onboarding = () => {
     }
   };
 
+  const removeTag = (tagToRemove: string) => {
+    setFormData(prev => ({ ...prev, interests: prev.interests.filter(tag => tag !== tagToRemove) }));
+  };
+
   return (
     <div className="min-h-screen bg-[#142239] text-slate-100 flex items-center justify-center p-4 font-sans">
       <div className="w-full max-w-2xl">
+
+        {/* TELA DE BOAS VINDAS */}
         {step === 0 && (
-          <div className="bg-[#15335E] rounded-3xl p-10 text-center">
-            <div className="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-[#D5205D] to-[#275A80] rounded-3xl flex items-center justify-center">
+          <div className="bg-[#15335E] rounded-3xl p-10 text-center shadow-2xl animate-in fade-in zoom-in duration-500">
+            <div className="w-24 h-24 mx-auto mb-8 bg-gradient-to-br from-[#D5205D] to-[#275A80] rounded-3xl flex items-center justify-center shadow-lg shadow-pink-900/20">
               <Award size={48} className="text-white" />
             </div>
-            <h1 className="text-4xl font-bold mb-4">Bem-vindo ao ReGISS Alumni</h1>
-            <p className="text-slate-400 mb-10">Vamos configurar seu perfil para uma experiência completa.</p>
+            <h1 className="text-4xl font-bold mb-4 tracking-tight">Bem-vindo ao Alumni ReGISS</h1>
+            <p className="text-slate-400 mb-10 text-lg">Vamos configurar seu perfil para uma experiência completa na nossa rede.</p>
             <button
               onClick={() => setStep(1)}
-              className="bg-[#D5205D] text-white px-10 py-4 rounded-2xl font-bold text-lg hover:scale-105 transition-transform"
+              className="bg-[#D5205D] hover:bg-pink-600 text-white px-10 py-4 rounded-2xl font-bold text-lg hover:scale-105 transition-all shadow-xl active:scale-95"
             >
               Começar Configuração
             </button>
           </div>
         )}
 
+        {/* PASSOS DO FORMULÁRIO */}
         {step > 0 && (
-          <div className="bg-[#15335E] rounded-3xl p-8 md:p-12">
-            {/* Progresso */}
+          <div className="bg-[#15335E] rounded-3xl p-8 md:p-12 shadow-2xl">
+
+            {/* Barra de Progresso */}
             <div className="flex gap-2 mb-10">
               {[1, 2, 3].map(i => (
                 <div
                   key={i}
-                  className={`h-2 flex-1 rounded-full transition-all ${step >= i ? 'bg-[#D5205D]' : 'bg-[#142239]'}`}
+                  className={`h-2 flex-1 rounded-full transition-all duration-500 ${step >= i ? 'bg-[#D5205D] shadow-[0_0_10px_rgba(213,32,93,0.5)]' : 'bg-[#142239]'}`}
                 />
               ))}
             </div>
 
-            {/* Step 1 - Identificação */}
+            {/* STEP 1 - IDENTIFICAÇÃO BÁSICA */}
             {step === 1 && (
-              <div>
-                <h2 className="text-3xl font-bold mb-8">Identificação Básica</h2>
+              <div className="animate-in fade-in slide-in-from-right-8 duration-500">
+                <h2 className="text-3xl font-bold mb-8 text-white">Identificação Básica</h2>
                 <div className="space-y-6">
                   <div>
-                    <label className="text-xs font-bold text-slate-400 uppercase">Nome Completo</label>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Nome Completo</label>
                     <input
                       type="text"
                       value={formData.fullName}
                       onChange={e => setFormData({ ...formData, fullName: e.target.value })}
-                      className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-2 text-white outline-none focus:border-[#D5205D]"
-                      placeholder="Seu nome completo"
+                      className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-2 text-white outline-none focus:border-[#D5205D] transition-all placeholder:text-slate-600"
+                      placeholder="Ex: João da Silva"
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="text-xs font-bold text-slate-400 uppercase">Data de Nascimento</label>
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Data de Nascimento</label>
                       <input
-                        type="text"
-                        placeholder="DD/MM/AAAA"
+                        type="date" // TIPO DATE NATIVO (Resolve o erro do loop)
                         value={formData.birthDate}
-                        onChange={e => {
-                          let val = e.target.value.replace(/\D/g, '');
-                          if (val.length > 2) val = val.slice(0, 2) + '/' + val.slice(2);
-                          if (val.length > 5) val = val.slice(0, 5) + '/' + val.slice(5, 9);
-                          setFormData({ ...formData, birthDate: val });
-                        }}
-                        className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-2 text-white outline-none focus:border-[#D5205D]"
+                        onChange={e => setFormData({ ...formData, birthDate: e.target.value })}
+                        className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-2 text-white outline-none focus:border-[#D5205D] transition-all [color-scheme:dark]"
                       />
                     </div>
 
                     <div>
-                      <label className="text-xs font-bold text-slate-400 uppercase">Ano de Ingresso</label>
+                      <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Ano de Ingresso na ReGISS</label>
                       <select
                         value={formData.entryYear}
                         onChange={e => setFormData({ ...formData, entryYear: e.target.value })}
-                        className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-2 text-white outline-none focus:border-[#D5205D]"
+                        className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-2 text-white outline-none focus:border-[#D5205D] transition-all cursor-pointer"
                       >
                         <option value="">Selecione o ano</option>
                         {years.map(y => <option key={y} value={y}>{y}</option>)}
@@ -217,8 +215,8 @@ export const Onboarding = () => {
                 <div className="flex justify-end mt-10">
                   <button
                     onClick={() => setStep(2)}
-                    disabled={!formData.fullName || formData.birthDate.length !== 10 || !formData.entryYear}
-                    className="bg-[#D5205D] text-white px-10 py-4 rounded-2xl font-bold flex items-center gap-2"
+                    disabled={!formData.fullName || !formData.birthDate || !formData.entryYear}
+                    className="bg-[#D5205D] hover:bg-pink-600 disabled:opacity-50 disabled:hover:bg-[#D5205D] text-white px-10 py-4 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg active:scale-95"
                   >
                     Continuar <ChevronRight />
                   </button>
@@ -226,29 +224,145 @@ export const Onboarding = () => {
               </div>
             )}
 
-            {/* Step 2 - Formação e Atuação */}
+            {/* STEP 2 - FORMAÇÃO E ATUAÇÃO */}
             {step === 2 && (
-              <div>
-                <h2 className="text-3xl font-bold mb-8">Formação e Atuação</h2>
-                {/* ... resto do formulário completo (profissão, cargo, empresa, etc.) ... */}
-                {/* (código completo do step 2 mantido e polido) */}
+              <div className="animate-in fade-in slide-in-from-right-8 duration-500">
+                <h2 className="text-3xl font-bold mb-8 text-white">Formação e Atuação</h2>
+                <div className="space-y-6">
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Sua Profissão Base</label>
+                    <input
+                      type="text"
+                      value={formData.profession}
+                      onChange={e => setFormData({ ...formData, profession: e.target.value })}
+                      className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-2 text-white outline-none focus:border-[#D5205D] transition-all placeholder:text-slate-600"
+                      placeholder="Ex: Fisioterapeuta, Enfermeiro, Médico..."
+                    />
+                  </div>
+
+                  {!isResident && (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Cargo Atual</label>
+                          <input
+                            type="text"
+                            value={formData.jobTitle}
+                            onChange={e => setFormData({ ...formData, jobTitle: e.target.value })}
+                            className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-2 text-white outline-none focus:border-[#D5205D] transition-all placeholder:text-slate-600"
+                            placeholder="Ex: Gestor de Qualidade"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Empresa / Instituição</label>
+                          <input
+                            type="text"
+                            value={formData.company}
+                            onChange={e => setFormData({ ...formData, company: e.target.value })}
+                            className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-2 text-white outline-none focus:border-[#D5205D] transition-all placeholder:text-slate-600"
+                            placeholder="Onde você trabalha hoje?"
+                          />
+                        </div>
+                      </div>
+
+                      {formData.company && (
+                        <div>
+                          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider ml-1">Data de Início no Cargo</label>
+                          <input
+                            type="date"
+                            value={formData.jobStartDate}
+                            onChange={e => setFormData({ ...formData, jobStartDate: e.target.value })}
+                            className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-2 text-white outline-none focus:border-[#D5205D] transition-all [color-scheme:dark]"
+                          />
+                        </div>
+                      )}
+                    </>
+                  )}
+
+                  {isResident && (
+                    <div className="bg-[#142239] p-4 rounded-2xl border border-white/5 text-sm text-slate-400">
+                      Como você informou que entrou em {formData.entryYear}, o sistema configurará seu cargo automaticamente como Residente no HCFMUSP.
+                    </div>
+                  )}
+
+                </div>
+
+                <div className="flex justify-between mt-10">
+                  <button
+                    onClick={() => setStep(1)}
+                    className="text-slate-400 hover:text-white px-6 py-4 font-bold transition-colors"
+                  >
+                    Voltar
+                  </button>
+                  <button
+                    onClick={() => setStep(3)}
+                    disabled={!formData.profession}
+                    className="bg-[#D5205D] hover:bg-pink-600 disabled:opacity-50 disabled:hover:bg-[#D5205D] text-white px-10 py-4 rounded-2xl font-bold flex items-center gap-2 transition-all shadow-lg active:scale-95"
+                  >
+                    Continuar <ChevronRight />
+                  </button>
+                </div>
               </div>
             )}
 
-            {/* Step 3 - Interesses e Finalização */}
+            {/* STEP 3 - INTERESSES E FINALIZAÇÃO */}
             {step === 3 && (
-              <div>
-                <h2 className="text-3xl font-bold mb-8">Seus Interesses</h2>
-                {/* ... form de interesses e botão Finalizar ... */}
-                <button
-                  onClick={handleFinish}
-                  disabled={loading}
-                  className="w-full bg-[#D5205D] py-5 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 mt-10"
-                >
-                  {loading ? <Loader2 className="animate-spin" /> : 'Finalizar Cadastro'}
-                </button>
+              <div className="animate-in fade-in slide-in-from-right-8 duration-500">
+                <h2 className="text-3xl font-bold mb-2 text-white">Seus Interesses</h2>
+                <p className="text-slate-400 mb-8">Adicione tags sobre o que você pesquisa, estuda ou tem interesse profissional. Isso ajuda no networking!</p>
+
+                <div className="space-y-6">
+                  <div className="flex gap-4">
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={e => setTagInput(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && addTag()}
+                      className="flex-1 bg-[#142239] border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-[#D5205D] transition-all placeholder:text-slate-600"
+                      placeholder="Ex: Gestão Lean, Saúde Digital, Qualidade..."
+                    />
+                    <button
+                      onClick={addTag}
+                      className="bg-[#142239] hover:bg-[#D5205D] border border-white/10 hover:border-[#D5205D] text-white px-6 rounded-2xl font-bold transition-all shadow-lg active:scale-95"
+                    >
+                      <Plus size={24} />
+                    </button>
+                  </div>
+
+                  {/* Lista de Tags Adicionadas */}
+                  {formData.interests.length > 0 && (
+                    <div className="flex flex-wrap gap-2 p-4 bg-[#142239] rounded-2xl border border-white/5 min-h-[80px]">
+                      {formData.interests.map((tag, index) => (
+                        <span key={index} className="bg-[#D5205D]/20 text-[#D5205D] px-3 py-1.5 rounded-xl text-sm font-bold flex items-center gap-2 border border-[#D5205D]/30">
+                          {tag}
+                          <button onClick={() => removeTag(tag)} className="hover:text-white transition-colors">
+                            <X size={14} />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-between mt-10 pt-6 border-t border-white/5">
+                  <button
+                    onClick={() => setStep(2)}
+                    className="text-slate-400 hover:text-white px-4 py-4 font-bold transition-colors"
+                  >
+                    Voltar
+                  </button>
+                  <button
+                    onClick={handleFinish}
+                    disabled={loading || formData.interests.length === 0}
+                    className="flex-1 ml-4 bg-[#D5205D] hover:bg-pink-600 disabled:opacity-50 disabled:hover:bg-[#D5205D] text-white py-4 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all shadow-xl active:scale-95"
+                  >
+                    {loading ? <Loader2 className="animate-spin" size={24} /> : <><Check size={24} /> Finalizar Cadastro</>}
+                  </button>
+                </div>
               </div>
             )}
+
           </div>
         )}
       </div>

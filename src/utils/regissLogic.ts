@@ -23,13 +23,13 @@ export const getRegissStatus = (entryYear: number | null, role?: string) => {
     };
   }
 
-  // Fallback caso algum usuário caia aqui sem ano de entrada definido
+  // Fallback
   if (!entryYear) {
     return {
       label: 'Convidado',
       color: 'bg-slate-500/20 text-slate-400',
       border: 'border-slate-500/50',
-      defaultRole: 'Usuário',
+      defaultRole: '',
       glow: '',
       isResident: false
     };
@@ -48,7 +48,7 @@ export const getRegissStatus = (entryYear: number | null, role?: string) => {
       label: 'R1',
       color: 'bg-blue-500/20 text-blue-400',
       border: 'border-blue-500/50',
-      defaultRole: 'Residente R1',
+      defaultRole: 'Residente R1', // Força R1 enquanto estiver no ano letivo 1
       glow: '',
       isResident: true
     };
@@ -57,16 +57,17 @@ export const getRegissStatus = (entryYear: number | null, role?: string) => {
       label: 'R2',
       color: 'bg-emerald-500/20 text-emerald-400',
       border: 'border-emerald-500/50',
-      defaultRole: 'Residente R2',
+      defaultRole: 'Residente R2', // Força R2 enquanto estiver no ano letivo 2
       glow: '',
       isResident: true
     };
   } else {
+    // 🎉 FORMATURA: Virou Alumni!
     return {
       label: `Alumni '${entryYear}`,
       color: 'bg-amber-500/20 text-amber-400',
       border: 'border-amber-500/50',
-      defaultRole: 'Especialista',
+      defaultRole: '', // VAZIO! Se ele não cadastrou profissão, não mostramos nada falso.
       glow: 'shadow-[0_0_10px_rgba(245,158,11,0.15)]',
       isResident: false
     };

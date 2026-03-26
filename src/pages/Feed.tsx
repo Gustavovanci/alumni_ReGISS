@@ -13,7 +13,6 @@ interface Profile {
   id: string; full_name: string; profession: string; job_title: string; entry_year: number; birth_date: string; interests: string[]; avatar_url?: string; theme_color?: string; role?: string;
 }
 
-// SKELETON DE CARREGAMENTO PARA O FEED
 const FeedSkeleton = () => (
   <div className="space-y-6">
     <div className="bg-[#15335E] border border-white/5 rounded-3xl p-8 animate-pulse">
@@ -84,13 +83,12 @@ export const Feed = () => {
       ]);
 
       const savedDismissed = user.user_metadata?.dismissed_updates || JSON.parse(localStorage.getItem('dismissed_updates') || '[]');
-      setDismissedUpdates(savedDismissed); // Atualiza o estado da memória Local
+      setDismissedUpdates(savedDismissed);
       const userJoinedAt = new Date(profileData.created_at).getTime();
 
       const visibleUpdates = (updatesData || []).filter(u => {
         if (savedDismissed.includes(u.id)) return false;
 
-        // Se o usuário entrou no sistema DEPOIS que o aviso foi criado, ele não vê.
         const updateCreatedAt = new Date(u.created_at).getTime();
         if (userJoinedAt > updateCreatedAt) return false;
 
@@ -108,7 +106,7 @@ export const Feed = () => {
       setHasNotifications(count !== null && count > 0);
       setSuggestedMatches(matches || []);
 
-    } catch (error) { 
+    } catch (error) {
       console.error(error);
       const errorMessage = error instanceof Error ? error.message : "Verifique sua conexão";
       toast.error("Erro ao carregar dados: " + errorMessage);
@@ -132,7 +130,6 @@ export const Feed = () => {
         }
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'posts' }, (payload) => {
-        // Remove da tela instantaneamente se alguém deletar um post
         setFeedPosts(useStore.getState().feedPosts.filter((post: any) => post.id !== payload.old.id));
       })
       .subscribe();
@@ -147,7 +144,6 @@ export const Feed = () => {
     const { error } = await supabase.from('posts').insert({ user_id: userProfile?.id, content: newPostContent, type: 'general' });
     if (!error) {
       setNewPostContent('');
-      // Não precisa de fetchData(), o Realtime vai injetar o post!
     }
   };
 
@@ -157,7 +153,6 @@ export const Feed = () => {
     localStorage.setItem('dismissed_updates', JSON.stringify(newDismissed));
     setSystemUpdates(systemUpdates.filter(u => u.id !== id));
 
-    // Backup em nuvem via User Metadata para persistir entre sessions de login diferentes
     try {
       await supabase.auth.updateUser({
         data: { dismissed_updates: newDismissed }
@@ -170,6 +165,53 @@ export const Feed = () => {
   const userTheme = userProfile?.theme_color || 'regiss-magenta';
   const themeBgClass = userTheme === 'regiss-petrol' ? 'bg-[#275A80]' : userTheme === 'regiss-wine' ? 'bg-[#B32F50]' : 'bg-[#D5205D]';
   const themeFromClass = userTheme === 'regiss-petrol' ? 'from-[#275A80]' : userTheme === 'regiss-wine' ? 'from-[#B32F50]' : 'from-[#D5205D]';
+
+  // COMPONENTE EXTRAÍDO: SUGESTÕES DE MATCHES
+  // Ele vai ser renderizado duas vezes (uma para mobile, outra para desktop),
+  // então extrair para uma função mantém o código limpo.
+  const RenderMatches = () => {
+    if (userProfile?.role === 'coordination' || isAdmin) return null;
+
+    return (
+      <div className="bg-[#15335E] border border-white/5 rounded-3xl p-6 shadow-xl sticky top-[340px]">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="font-bold text-white flex items-center gap-2">
+            <Sparkles size={18} className="text-[#D5205D]" /> Sugestões para Você
+          </h3>
+        </div>
+        <div className="space-y-4">
+          {suggestedMatches.length === 0 ? (
+            <div className="text-center py-6 bg-[#142239] rounded-2xl border border-white/5">
+              <p className="text-xs text-slate-500 italic px-4">Complete seus interesses no perfil para receber sugestões.</p>
+              <button onClick={() => navigate('/my-journey')} className="text-xs text-[#D5205D] font-bold mt-3 hover:underline">+ Adicionar Interesses</button>
+            </div>
+          ) : (
+            suggestedMatches.map(match => {
+              const matchStatus = getRegissStatus(match.entry_year, match.role);
+              return (
+                <div key={match.id} className="flex gap-4 items-center group cursor-pointer bg-[#142239] p-3 rounded-2xl border border-white/5 hover:border-white/20 transition-all shadow-sm" onClick={() => navigate(`/profile/${match.id}`)}>
+                  <div className={`w-12 h-12 rounded-full border-2 ${matchStatus.border} overflow-hidden shrink-0 shadow-inner`}>
+                    {match.avatar_url ? (
+                      <img src={match.avatar_url} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-slate-800 flex items-center justify-center text-sm font-bold uppercase">{match.full_name.charAt(0)}</div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-white truncate group-hover:text-[#D5205D] transition-colors">{match.full_name}</p>
+                    <p className="text-[10px] text-slate-400 truncate mt-0.5">{match.profession}</p>
+                  </div>
+                  <button className="p-2 bg-[#15335E] hover:bg-[#D5205D] text-slate-400 hover:text-white rounded-xl transition-all shadow-md">
+                    <User size={14} />
+                  </button>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#142239] text-slate-100 font-sans p-0 md:p-8 pb-24">
@@ -201,7 +243,7 @@ export const Feed = () => {
 
         <main className="grid grid-cols-1 md:grid-cols-12 gap-8">
 
-          {/* COLUNA ESQUERDA (PERFIL) */}
+          {/* COLUNA ESQUERDA (PERFIL - SÓ DESKTOP/TABLET) */}
           <div className="md:col-span-4 lg:col-span-3 space-y-6 hidden md:block">
             {loading ? (
               <div className="bg-[#15335E] border border-white/5 rounded-3xl p-6 h-64 animate-pulse"></div>
@@ -231,7 +273,7 @@ export const Feed = () => {
             )}
           </div>
 
-          {/* COLUNA CENTRAL (FEED PRINCIPAL) */}
+          {/* COLUNA CENTRAL (FEED E CONTEÚDO PRINCIPAL) */}
           <div className="md:col-span-8 lg:col-span-6 space-y-6">
 
             {loading ? (
@@ -275,9 +317,10 @@ export const Feed = () => {
                   </div>
                 ))}
 
-                {/* LISTA DE POSTS */}
+                {/* FEED DE POSTS */}
                 <div className="space-y-2 md:space-y-6">
-                  {/* O INPUT DE CRIAR POST COM AUTO-RESIZE */}
+
+                  {/* O INPUT DE CRIAR POST */}
                   <div className="bg-[#15335E] border-y md:border border-white/5 rounded-none md:rounded-3xl p-5 shadow-xl mb-4 md:mb-8">
                     <div className="flex gap-4">
                       <div className="w-12 h-12 rounded-full bg-[#142239] flex-shrink-0 flex items-center justify-center font-bold text-slate-400 border border-white/5 overflow-hidden shadow-inner">{userProfile?.avatar_url ? <img src={userProfile.avatar_url} className="w-full h-full object-cover" alt="Me" /> : userProfile?.full_name?.charAt(0)}</div>
@@ -296,39 +339,31 @@ export const Feed = () => {
                       <button onClick={handleCreatePost} disabled={!newPostContent.trim()} className="bg-[#D5205D] hover:bg-pink-600 disabled:opacity-50 disabled:hover:bg-[#D5205D] text-white px-8 py-3 rounded-xl font-bold text-sm flex items-center gap-2 transition-all shadow-lg">Publicar <Send size={16} /></button>
                     </div>
                   </div>
+
+                  {/* !!! MAGIA MOBILE AQUI !!! */}
+                  {/* Sugestões de Networking visíveis apenas no Celular/Tablet */}
+                  {!loading && (
+                    <div className="block lg:hidden mb-6 px-4 md:px-0">
+                      <RenderMatches />
+                    </div>
+                  )}
+
+                  {/* LISTA DE POSTAGENS */}
                   {feedPosts.map(post => <PostCard key={post.id} post={post} currentUserId={currentUserId} />)}
                 </div>
               </>
             )}
           </div>
 
-          {/* COLUNA DIREITA (CALENDÁRIO E MATCHES) */}
+          {/* COLUNA DIREITA (CALENDÁRIO E MATCHES - SÓ DESKTOP) */}
           <div className="hidden lg:block lg:col-span-3 space-y-6">
             {!loading && <MiniCalendar />}
 
-            {/* Oculta sugestões de amizade se for coordenação ou admin */}
-            {!loading && userProfile?.role !== 'coordination' && !isAdmin && (
-              <div className="bg-[#15335E] border border-white/5 rounded-3xl p-6 shadow-xl sticky top-[340px]">
-                <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-white flex items-center gap-2"><Sparkles size={18} className="text-[#D5205D]" /> Sugestões para Você</h3></div>
-                <div className="space-y-4">
-                  {suggestedMatches.length === 0 ? (
-                    <div className="text-center py-6 bg-[#142239] rounded-2xl border border-white/5"><p className="text-xs text-slate-500 italic px-4">Complete seus interesses no perfil para receber sugestões.</p><button onClick={() => navigate('/my-journey')} className="text-xs text-[#D5205D] font-bold mt-3 hover:underline">+ Adicionar Interesses</button></div>
-                  ) : (
-                    suggestedMatches.map(match => {
-                      const matchStatus = getRegissStatus(match.entry_year, match.role);
-                      return (
-                        <div key={match.id} className="flex gap-4 items-center group cursor-pointer bg-[#142239] p-3 rounded-2xl border border-white/5 hover:border-white/20 transition-all shadow-sm" onClick={() => navigate(`/profile/${match.id}`)}>
-                          <div className={`w-12 h-12 rounded-full border-2 ${matchStatus.border} overflow-hidden shrink-0 shadow-inner`}>{match.avatar_url ? <img src={match.avatar_url} className="w-full h-full object-cover" /> : <div className="w-full h-full bg-slate-800 flex items-center justify-center text-sm font-bold">{match.full_name.charAt(0)}</div>}</div>
-                          <div className="min-w-0 flex-1"><p className="text-sm font-bold text-white truncate group-hover:text-[#D5205D] transition-colors">{match.full_name}</p><p className="text-[10px] text-slate-400 truncate mt-0.5">{match.profession}</p></div>
-                          <button className="p-2 bg-[#15335E] hover:bg-[#D5205D] text-slate-400 hover:text-white rounded-xl transition-all shadow-md"><User size={14} /></button>
-                        </div>
-                      )
-                    })
-                  )}
-                </div>
-              </div>
+            {!loading && (
+              <RenderMatches />
             )}
           </div>
+
         </main>
       </div>
     </div>
