@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { Save, Plus, Briefcase, GraduationCap, Trash2, Camera, Palette, Send, Edit3, Award, MessageCircle, Lock, Loader2 } from 'lucide-react';
-import { StarRating } from '../components/StarRating';
-import { useStore } from '../store/useStore';
+import { Save, Plus, Briefcase, GraduationCap, Trash2, Camera, Edit3, Award, Loader2, BellRing } from 'lucide-react';
 import { toast } from 'sonner';
+import { useStore } from '../store/useStore';
+import { subscribeToPushNotifications } from '../utils/pushNotifications';
 
 export const MyJourney = () => {
   const navigate = useNavigate();
@@ -87,7 +87,7 @@ export const MyJourney = () => {
 
     const { error } = await supabase.storage.from('avatars').upload(filePath, file);
     if (error) {
-      toast.error('Erro ao fazer upload da imagem');
+      toast.error('Erro ao fazer upload');
       setUploading(false);
       return;
     }
@@ -114,7 +114,7 @@ export const MyJourney = () => {
     if (error) toast.error('Erro ao salvar perfil');
     else {
       await fetchUserProfile(true);
-      toast.success('Perfil atualizado com sucesso!');
+      toast.success('Perfil atualizado!');
       navigate('/feed');
     }
   };
@@ -132,17 +132,6 @@ export const MyJourney = () => {
       setConfirmPassword('');
     }
     setIsUpdatingPassword(false);
-  };
-
-  const addInterest = () => {
-    if (newInterest.trim() && !interests.includes(newInterest.trim())) {
-      setInterests([...interests, newInterest.trim()]);
-      setNewInterest('');
-    }
-  };
-
-  const removeInterest = (tag: string) => {
-    setInterests(interests.filter(t => t !== tag));
   };
 
   const handleSaveItem = async () => {
@@ -163,7 +152,7 @@ export const MyJourney = () => {
   };
 
   const handleDeleteItem = async (id: string) => {
-    if (!confirm('Apagar esta experiência?')) return;
+    if (!window.confirm('Apagar esta experiência?')) return;
     await supabase.from('career_journey').delete().eq('id', id);
     fetchData();
   };
@@ -180,19 +169,19 @@ export const MyJourney = () => {
     <div className="min-h-screen bg-[#142239] text-slate-100 p-4 md:p-8 pb-24">
       <div className="max-w-3xl mx-auto">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold">Meu Perfil &amp; Jornada</h1>
-          <button onClick={handleSaveProfile} className="flex items-center gap-2 bg-[#D5205D] px-6 py-3 rounded-2xl font-bold text-white">
+          <h1 className="text-3xl font-bold">Meu Perfil & Jornada</h1>
+          <button onClick={handleSaveProfile} className="flex items-center gap-2 bg-[#D5205D] px-6 py-3 rounded-2xl font-bold text-white shadow-lg active:scale-95 transition-all">
             <Save size={20} /> Salvar Tudo
           </button>
         </div>
 
-        {/* Perfil */}
+        {/* Seção Perfil */}
         <div className="bg-[#15335E] rounded-3xl p-8 mb-8">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="relative">
               <div className="w-32 h-32 rounded-3xl overflow-hidden border-4 border-[#142239]">
                 {avatarUrl ? (
-                  <img src={avatarUrl} className="w-full h-full object-cover" alt={fullName} />
+                  <img src={avatarUrl} className="w-full h-full object-cover" alt="Avatar" />
                 ) : (
                   <div className="w-full h-full bg-slate-700 flex items-center justify-center text-5xl font-bold text-slate-400">
                     {fullName[0] || '?'}
@@ -200,8 +189,8 @@ export const MyJourney = () => {
                 )}
               </div>
               <label className="absolute bottom-2 right-2 bg-[#D5205D] text-white p-2 rounded-2xl cursor-pointer">
-                <Camera size={20} />
-                <input type="file" accept="image/*" onChange={handleUploadAvatar} className="hidden" />
+                {uploading ? <Loader2 className="animate-spin" size={20} /> : <Camera size={20} />}
+                <input type="file" accept="image/*" onChange={handleUploadAvatar} className="hidden" disabled={uploading} />
               </label>
             </div>
 
@@ -216,16 +205,18 @@ export const MyJourney = () => {
                 />
               </div>
 
-              <div>
-                <label className="text-xs uppercase font-bold text-slate-400">Tema do Perfil</label>
-                <div className="flex gap-3 mt-2">
-                  {['regiss-magenta', 'regiss-petrol', 'regiss-wine'].map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => setThemeColor(color)}
-                      className={`w-10 h-10 rounded-2xl ${color === 'regiss-magenta' ? 'bg-[#D5205D]' : color === 'regiss-petrol' ? 'bg-[#275A80]' : 'bg-[#B32F50]'}`}
-                    />
-                  ))}
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <label className="text-xs uppercase font-bold text-slate-400">Tema do Perfil</label>
+                  <div className="flex gap-3 mt-2">
+                    {['regiss-magenta', 'regiss-petrol', 'regiss-wine'].map((color) => (
+                      <button
+                        key={color}
+                        onClick={() => setThemeColor(color)}
+                        className={`w-10 h-10 rounded-2xl border-2 ${themeColor === color ? 'border-white' : 'border-transparent'} ${color === 'regiss-magenta' ? 'bg-[#D5205D]' : color === 'regiss-petrol' ? 'bg-[#275A80]' : 'bg-[#B32F50]'}`}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -258,6 +249,33 @@ export const MyJourney = () => {
             </button>
           </div>
 
+          {isAdding && (
+            <div className="bg-[#15335E] rounded-3xl p-8 mb-8 space-y-4">
+              <div>
+                <label className="text-xs uppercase font-bold text-slate-400">Título do Cargo/Experiência</label>
+                <input type="text" value={newItem.title} onChange={e => setNewItem({ ...newItem, title: e.target.value })} className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-1" placeholder="Ex: Gestor de Qualidade" />
+              </div>
+              <div>
+                <label className="text-xs uppercase font-bold text-slate-400">Instituição/Empresa</label>
+                <input type="text" value={newItem.organization} onChange={e => setNewItem({ ...newItem, organization: e.target.value })} className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-1" placeholder="Ex: Hospital Sírio-Libanês" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs uppercase font-bold text-slate-400">Data de Início</label>
+                  <input type="date" value={newItem.start_date} onChange={e => setNewItem({ ...newItem, start_date: e.target.value })} className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-1 [color-scheme:dark]" />
+                </div>
+                <div>
+                  <label className="text-xs uppercase font-bold text-slate-400">Data de Término</label>
+                  <input type="date" value={newItem.end_date} onChange={e => setNewItem({ ...newItem, end_date: e.target.value })} className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 mt-1 [color-scheme:dark]" />
+                </div>
+              </div>
+              <div className="flex justify-end gap-4 mt-6">
+                <button onClick={() => setIsAdding(false)} className="px-6 py-3 font-bold text-slate-400">Cancelar</button>
+                <button onClick={handleSaveItem} className="px-6 py-3 font-bold text-white bg-[#D5205D] rounded-xl">Salvar</button>
+              </div>
+            </div>
+          )}
+
           {journeyItems.map((item) => (
             <div key={item.id} className="bg-[#15335E] rounded-3xl p-6 mb-4 flex justify-between items-center">
               <div>
@@ -276,6 +294,26 @@ export const MyJourney = () => {
           ))}
         </div>
 
+        {/* Notificações Push */}
+        <div className="bg-[#15335E] rounded-3xl p-8 mb-8">
+          <div className="flex items-start md:items-center justify-between flex-col md:flex-row gap-4">
+            <div>
+              <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
+                <BellRing className="text-[#D5205D]" /> Alertas no Celular
+              </h2>
+              <p className="text-slate-400 text-sm">
+                Receba notificações em tempo real sobre vagas e atualizações, mesmo com o app fechado.
+              </p>
+            </div>
+            <button
+              onClick={subscribeToPushNotifications}
+              className="shrink-0 bg-[#142239] border border-[#D5205D] text-[#D5205D] hover:bg-[#D5205D] hover:text-white px-6 py-3 rounded-2xl font-bold transition-all shadow-lg active:scale-95"
+            >
+              Ativar Alertas
+            </button>
+          </div>
+        </div>
+
         {/* Senha */}
         <div className="bg-[#15335E] rounded-3xl p-8">
           <h2 className="text-xl font-bold mb-6">Alterar Senha</h2>
@@ -285,18 +323,18 @@ export const MyJourney = () => {
               placeholder="Nova senha"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="bg-[#142239] border border-white/10 rounded-2xl p-4"
+              className="bg-[#142239] border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-[#D5205D]"
             />
             <input
               type="password"
               placeholder="Confirmar senha"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="bg-[#142239] border border-white/10 rounded-2xl p-4"
+              className="bg-[#142239] border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-[#D5205D]"
             />
           </div>
-          <button onClick={handleUpdatePassword} className="mt-6 w-full bg-white text-[#142239] py-4 rounded-2xl font-bold">
-            Atualizar Senha
+          <button onClick={handleUpdatePassword} disabled={isUpdatingPassword} className="mt-6 w-full bg-white text-[#142239] hover:bg-slate-200 transition-colors py-4 rounded-2xl font-bold flex justify-center items-center">
+            {isUpdatingPassword ? <Loader2 className="animate-spin" size={20} /> : 'Atualizar Senha'}
           </button>
         </div>
       </div>
