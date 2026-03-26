@@ -5,8 +5,8 @@ import {
    Shield, Users, Briefcase, Building, Search, Trash2, Key, Activity,
    Lock, Megaphone, Plus, Link as LinkIcon, AlertTriangle, Target,
    Server, BarChart3, Globe, Database, FileText, ImageIcon,
-   FileSearch, UserPlus, Award, Edit3, Save, Loader2
-} from 'lucide-react'; // Loader2 adicionado aqui
+   FileSearch, UserPlus, Award, Edit3, Save, Loader2, CheckCircle2
+} from 'lucide-react';
 import { toast } from 'sonner';
 import { useStore } from '../store/useStore';
 
@@ -72,6 +72,9 @@ export const Admin = () => {
       }
    };
 
+   // ==========================================
+   // REQUISIÇÕES SUPABASE
+   // ==========================================
    const fetchStats = async () => {
       const [
          { count: uCount },
@@ -111,6 +114,7 @@ export const Admin = () => {
    };
 
    const fetchRegissItems = async () => {
+      setLoading(true);
       const { data, error } = await supabase
          .from('career_journey')
          .select(`id, title, organization, profiles (full_name)`)
@@ -119,6 +123,7 @@ export const Admin = () => {
 
       if (error) toast.error("Erro ao carregar marcos");
       else setRegissList(data || []);
+      setLoading(false);
    };
 
    const handleUpdateRegissTitle = async (id: string, newTitle: string) => {
@@ -136,7 +141,7 @@ export const Admin = () => {
       if (!confirm("Atenção: Isso apagará o usuário e todos os seus dados. Continuar?")) return;
       await supabase.from('profiles').delete().eq('id', id);
       fetchUsers();
-      toast.success("Usuário removido do sistema.");
+      toast.success("Usuário removido.");
    };
 
    const handleApproveCompany = async (lead: any) => {
@@ -144,61 +149,36 @@ export const Admin = () => {
       const { error } = await supabase.from('company_invites').insert({ code: inviteCode, company_name: lead.company_name });
       if (!error) {
          await supabase.from('company_leads').update({ status: 'approved' }).eq('id', lead.id);
-         prompt(`Empresa Aprovada! Envie este código para o RH:`, `Acesse: https://alumnihc.com/company-register | Código: ${inviteCode}`);
+         prompt(`Aprovada! Código:`, inviteCode);
          fetchLeads();
       }
    };
 
    const handleDeleteCompany = async (id: string) => {
-      if (!confirm("Deletar permanentemente este registro de empresa?")) return;
+      if (!confirm("Deletar empresa?")) return;
       await supabase.from('company_leads').delete().eq('id', id);
       fetchLeads();
    };
 
    const handleDeletePost = async (id: string) => {
-      if (!confirm("Apagar este post permanentemente?")) return;
+      if (!confirm("Apagar post?")) return;
       await supabase.from('posts').delete().eq('id', id);
       fetchPosts();
    };
 
    const handleCreateUpdate = async () => {
-      if (!newUpdate.title || !newUpdate.content) return toast.error("Título e Texto são obrigatórios.");
-
-      const { data: { user: adminUser } } = await supabase.auth.getUser();
+      if (!newUpdate.title || !newUpdate.content) return toast.error("Preencha título e conteúdo.");
       const { error } = await supabase.from('system_updates').insert([newUpdate]);
-
       if (!error) {
          setNewUpdate({ title: '', content: '', link_url: '', image_url: '' });
          setIsCreatingUpdate(false);
          fetchUpdates();
-         toast.success("Comunicado publicado!");
-
-         (async () => {
-            try {
-               const { data: users } = await supabase.from('profiles').select('id');
-               if (users && users.length > 0) {
-                  const chunk = 100;
-                  for (let i = 0; i < users.length; i += chunk) {
-                     const batch = users.slice(i, i + chunk).map(u => ({
-                        user_id: u.id,
-                        actor_id: adminUser?.id,
-                        type: 'system',
-                        title: 'Comunicado do Sistema',
-                        content: `📢 ${newUpdate.title}: ${newUpdate.content.slice(0, 50)}...`,
-                        read: false
-                     }));
-                     await supabase.from('notifications').insert(batch);
-                  }
-               }
-            } catch (err) {
-               console.error("Erro ao disparar notificações globais:", err);
-            }
-         })();
+         toast.success("Publicado!");
       }
    };
 
    const handleDeleteUpdate = async (id: string) => {
-      if (!confirm("Apagar comunicado?")) return;
+      if (!confirm("Apagar alerta?")) return;
       await supabase.from('system_updates').delete().eq('id', id);
       fetchUpdates();
    };
@@ -217,52 +197,44 @@ export const Admin = () => {
    const handleRunMatchmaking = async (job: any) => {
       setSelectedJob(job);
       setIsCalculatingMatch(true);
-
       try {
          const { data: profiles } = await supabase.from('profiles').select('*').not('role', 'in', '("admin", "coordinator")');
-         if (!profiles) throw new Error("Não foi possível carregar os alunos.");
-
+         if (!profiles) throw new Error("Erro ao carregar alunos.");
          const requiredTags = job.job_tags || [];
          const rankedProfiles = profiles.map(profile => {
             const userTags = (profile.interests || []).map((t: string) => t.toLowerCase());
             let score = 0;
-            requiredTags.forEach((tag: string) => {
-               if (userTags.includes(tag.toLowerCase())) score += 1;
-            });
+            requiredTags.forEach((tag: string) => { if (userTags.includes(tag.toLowerCase())) score += 1; });
             const percentage = requiredTags.length > 0 ? Math.round((score / requiredTags.length) * 100) : 0;
             return { ...profile, match_score: percentage };
          });
-
          rankedProfiles.sort((a, b) => b.match_score - a.match_score);
          setSuggestedTalents(rankedProfiles);
       } catch (error) {
-         console.error(error);
-         toast.error("Erro ao calcular o Match");
+         toast.error("Erro no Match");
       } finally {
          setIsCalculatingMatch(false);
       }
    };
 
    const handleSendDirectInvite = async (candidateId: string, companyName: string, jobTitle: string) => {
-      const confirmMsg = `Convidar este aluno em nome do Hospital/Empresa?\nEle receberá uma notificação push.`;
-      if (!confirm(confirmMsg)) return;
-
+      if (!confirm(`Enviar convite push para este aluno?`)) return;
       const { data: { user } } = await supabase.auth.getUser();
       await supabase.from('notifications').insert({
          user_id: candidateId,
          actor_id: user?.id,
          type: 'system',
-         content: `🏆 Curadoria VIP: O RH da ${companyName} gostou do seu perfil e quer conversar sobre a vaga de ${jobTitle}. Acesse a aba Vagas para detalhes.`
+         content: `🏆 O RH da ${companyName} quer falar com você sobre a vaga de ${jobTitle}!`
       });
-      toast.success("Convite VIP enviado ao aluno!");
+      toast.success("Convite enviado!");
    };
 
-   if (loading) return <div className="min-h-screen bg-[#0B1320] flex items-center justify-center text-white"><Activity className="animate-pulse text-[#D5205D] w-12 h-12" /></div>;
+   if (loading && activeTab === 'dashboard') return <div className="min-h-screen bg-[#0B1320] flex items-center justify-center text-white"><Activity className="animate-pulse text-[#D5205D] w-12 h-12" /></div>;
 
    return (
       <div className="w-full min-h-screen bg-[#0B1320] text-slate-100 font-sans flex flex-col md:flex-row">
 
-         {/* SIDEBAR DO ADMIN */}
+         {/* SIDEBAR */}
          <div className="w-full md:w-64 bg-[#142239] border-r border-white/5 p-6 flex flex-col">
             <div className="flex items-center gap-3 mb-10">
                <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center shadow-lg shadow-red-500/20"><Shield size={20} className="text-white" /></div>
@@ -289,7 +261,7 @@ export const Admin = () => {
             </nav>
 
             <div className="mt-auto pt-6 border-t border-white/5">
-               <button onClick={async () => { await supabase.auth.signOut(); navigate('/'); }} className="w-full text-slate-500 hover:text-red-400 flex items-center gap-2 text-sm font-bold transition-colors"><Lock size={14} /> Encerrar Sessão Segura</button>
+               <button onClick={async () => { await supabase.auth.signOut(); navigate('/'); }} className="w-full text-slate-500 hover:text-red-400 flex items-center gap-2 text-sm font-bold transition-colors"><Lock size={14} /> Sair com Segurança</button>
             </div>
          </div>
 
@@ -298,61 +270,36 @@ export const Admin = () => {
 
             {activeTab === 'dashboard' && (
                <div className="space-y-8 animate-fadeIn">
-                  <div>
-                     <h2 className="text-2xl font-bold text-white">Visão Geral da Operação</h2>
-                     <p className="text-slate-400 text-sm">Monitoramento em tempo real do ecossistema ReGISS.</p>
-                  </div>
-
+                  <h2 className="text-2xl font-bold">Visão Geral</h2>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                      <div className="bg-[#142239] border border-green-500/30 p-5 rounded-2xl flex items-center gap-4">
-                        <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center"><Activity className="text-green-500" /></div>
-                        <div><p className="text-xs text-slate-400 uppercase font-bold">Status do Banco</p><p className="text-xl font-bold text-green-400">{systemHealth.status}</p></div>
+                        <Activity className="text-green-500" /><div><p className="text-xs text-slate-400">Status</p><p className="text-xl font-bold text-green-400">Operacional</p></div>
                      </div>
                      <div className="bg-[#142239] border border-white/5 p-5 rounded-2xl flex items-center gap-4">
-                        <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center"><Server className="text-blue-500" /></div>
-                        <div><p className="text-xs text-slate-400 uppercase font-bold">Latência (API)</p><p className="text-xl font-bold text-white">{systemHealth.latency}</p></div>
-                     </div>
-                     <div className="bg-[#142239] border border-white/5 p-5 rounded-2xl flex items-center gap-4">
-                        <div className="w-12 h-12 bg-purple-500/10 rounded-full flex items-center justify-center"><Globe className="text-purple-500" /></div>
-                        <div><p className="text-xs text-slate-400 uppercase font-bold">Usuários Online</p><p className="text-xl font-bold text-white">{stats.onlineUsers}</p></div>
+                        <Globe className="text-purple-500" /><div><p className="text-xs text-slate-400">Online</p><p className="text-xl font-bold">{stats.onlineUsers}</p></div>
                      </div>
                   </div>
-
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                     <div className="bg-[#142239] p-6 rounded-2xl border border-white/5 shadow-lg">
-                        <p className="text-slate-400 text-xs uppercase font-bold">Total Base Alunos</p>
-                        <p className="text-4xl font-bold text-white mt-2">{stats.totalUsers}</p>
-                     </div>
-                     <div className="bg-[#142239] p-6 rounded-2xl border border-white/5 shadow-lg relative overflow-hidden">
-                        {stats.pendingLeads > 0 && <span className="absolute top-4 right-4 flex h-3 w-3"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span></span>}
-                        <p className="text-slate-400 text-xs uppercase font-bold">Leads B2B Pendentes</p>
-                        <p className="text-4xl font-bold text-amber-400 mt-2">{stats.pendingLeads}</p>
-                     </div>
-                     <div className="bg-[#142239] p-6 rounded-2xl border border-white/5 shadow-lg">
-                        <p className="text-slate-400 text-xs uppercase font-bold">Empresas Ativas</p>
-                        <p className="text-4xl font-bold text-emerald-400 mt-2">{stats.totalCompanies}</p>
-                     </div>
-                     <div className="bg-[#142239] p-6 rounded-2xl border border-white/5 shadow-lg">
-                        <p className="text-slate-400 text-xs uppercase font-bold">Vagas Premium (B2B)</p>
-                        <p className="text-4xl font-bold text-blue-400 mt-2">{stats.totalJobs}</p>
-                     </div>
+                     <div className="bg-[#142239] p-6 rounded-2xl border border-white/5"><p className="text-slate-400 text-xs uppercase font-bold">Alunos</p><p className="text-4xl font-bold mt-2">{stats.totalUsers}</p></div>
+                     <div className="bg-[#142239] p-6 rounded-2xl border border-white/5"><p className="text-slate-400 text-xs uppercase font-bold">Empresas</p><p className="text-4xl font-bold mt-2">{stats.totalCompanies}</p></div>
                   </div>
                </div>
             )}
 
             {activeTab === 'users' && (
                <div className="animate-fadeIn space-y-6">
-                  <div className="flex justify-between items-center">
-                     <h2 className="text-2xl font-bold text-white">Gestão de Usuários</h2>
-                  </div>
+                  <h2 className="text-2xl font-bold text-white">Gestão de Usuários</h2>
                   <div className="bg-[#142239] border border-white/10 rounded-2xl overflow-hidden">
-                     <div className="p-4 border-b border-white/10 flex">
-                        <div className="flex-1 bg-[#0B1320] flex items-center px-4 rounded-xl border border-white/10"><Search size={18} className="text-slate-500" /><input type="text" placeholder="Buscar usuário..." className="bg-transparent border-none p-3 text-white w-full outline-none" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} /></div>
+                     <div className="p-4 border-b border-white/10 bg-[#0B1320]/50 flex">
+                        <div className="flex-1 bg-[#0B1320] flex items-center px-4 rounded-xl border border-white/10">
+                           <Search size={18} className="text-slate-500" />
+                           <input type="text" placeholder="Buscar aluno..." className="bg-transparent p-3 text-white w-full outline-none" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+                        </div>
                      </div>
                      <table className="w-full text-left text-sm text-slate-300">
-                        <thead className="bg-[#0B1320] text-xs uppercase font-bold text-slate-500"><tr><th className="p-4">Nome</th><th className="p-4">Cargo</th><th className="p-4">Permissão</th><th className="p-4 text-right">Ações</th></tr></thead>
+                        <thead className="bg-[#0B1320] text-xs font-bold uppercase"><tr><th className="p-4">Nome</th><th className="p-4">Cargo</th><th className="p-4">Permissão</th><th className="p-4 text-right">Ações</th></tr></thead>
                         <tbody className="divide-y divide-white/5">
-                           {usersList.filter(u => u.full_name?.toLowerCase().includes(searchTerm.toLowerCase())).map(user => (
+                           {usersList.filter(u => (u.full_name || '').toLowerCase().includes((searchTerm || '').toLowerCase())).map(user => (
                               <tr key={user.id} className="hover:bg-white/5">
                                  <td className="p-4 font-bold text-white">{user.full_name}</td>
                                  <td className="p-4">{user.profession || 'Pendente'}</td>
@@ -372,11 +319,11 @@ export const Admin = () => {
                <div className="animate-fadeIn space-y-6">
                   <div>
                      <h2 className="text-2xl font-bold text-white">Gestão de Marcos ReGISS</h2>
-                     <p className="text-slate-400 text-sm">Correção gramatical e profissional dos marcos automáticos dos alunos.</p>
+                     <p className="text-slate-400 text-sm">Corrija erros gramaticais nos marcos automáticos dos alunos.</p>
                   </div>
 
                   <div className="bg-[#142239] border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
-                     <div className="p-6 border-b border-white/10 bg-[#0B1320]/50">
+                     <div className="p-6 border-b border-white/10 bg-[#0B1320]/50 space-y-4">
                         <div className="relative w-full">
                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                            <input
@@ -387,57 +334,49 @@ export const Admin = () => {
                               className="w-full bg-[#0B1320] border border-white/10 p-4 pl-12 rounded-2xl outline-none focus:border-[#D5205D] text-white transition-all"
                            />
                         </div>
+                        <div className="flex flex-wrap gap-2">
+                           <button onClick={() => setSearchTerm('Fisioterapeuta')} className="bg-red-500/10 text-red-400 border border-red-500/20 px-4 py-2 rounded-xl text-xs font-bold hover:bg-red-500/20">Erros: Fisioterapeuta</button>
+                           <button onClick={() => setSearchTerm('Nutricionista')} className="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-4 py-2 rounded-xl text-xs font-bold hover:bg-amber-500/20">Erros: Nutricionista</button>
+                           <button onClick={() => setSearchTerm('Enfermeiro')} className="bg-blue-500/10 text-blue-400 border border-blue-500/20 px-4 py-2 rounded-xl text-xs font-bold hover:bg-blue-500/20">Erros: Enfermeiro</button>
+                           <button onClick={() => setSearchTerm('')} className="bg-slate-700/50 text-slate-300 px-4 py-2 rounded-xl text-xs font-bold">Limpar Filtro</button>
+                        </div>
                      </div>
 
                      <table className="w-full text-left">
-                        <thead className="bg-[#0B1320] text-slate-400 text-[10px] uppercase font-black tracking-widest border-b border-white/5">
-                           <tr>
-                              <th className="p-6">Aluno</th>
-                              <th className="p-6">Título do Marco (Editável)</th>
-                              <th className="p-6 text-center">Salvar</th>
-                           </tr>
+                        <thead className="bg-[#0B1320] text-slate-400 text-[10px] uppercase font-black border-b border-white/5">
+                           <tr><th className="p-6">Aluno</th><th className="p-6">Título do Marco (Editável)</th><th className="p-6 text-center">Ação</th></tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
                            {regissList
-                              .filter(item =>
-                                 item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                 item.profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
-                              )
+                              .filter(item => {
+                                 const title = (item.title || '').toLowerCase();
+                                 const name = (item.profiles?.full_name || '').toLowerCase();
+                                 const search = (searchTerm || '').toLowerCase();
+                                 return title.includes(search) || name.includes(search);
+                              })
                               .map((item) => (
-                                 <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
+                                 <tr key={item.id} className="hover:bg-white/[0.02] group transition-colors">
                                     <td className="p-6">
-                                       <p className="font-bold text-white text-sm">{item.profiles?.full_name}</p>
-                                       <p className="text-[10px] text-slate-500 font-mono uppercase tracking-tighter">{item.organization}</p>
+                                       <p className="font-bold text-white text-sm">{item.profiles?.full_name || 'Desconhecido'}</p>
+                                       <p className="text-[10px] text-slate-500 uppercase tracking-tighter">HCFMUSP - ReGISS</p>
                                     </td>
                                     <td className="p-6">
                                        <div className="flex items-center gap-3">
                                           <input
                                              type="text"
                                              defaultValue={item.title}
-                                             onBlur={(e) => {
-                                                if (e.target.value !== item.title) {
-                                                   handleUpdateRegissTitle(item.id, e.target.value);
-                                                }
-                                             }}
-                                             className="flex-1 bg-[#0B1320] border border-white/5 p-3 rounded-xl outline-none focus:border-[#D5205D] text-sm text-slate-300 transition-all"
+                                             onBlur={(e) => { if (e.target.value !== item.title) handleUpdateRegissTitle(item.id, e.target.value); }}
+                                             className="flex-1 bg-[#0B1320] border border-white/5 p-3 rounded-xl outline-none focus:border-[#D5205D] text-sm text-slate-300"
                                           />
-                                          <Edit3 size={14} className="text-slate-600 opacity-0 group-hover:opacity-100" />
+                                          <Edit3 size={14} className="text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity" />
                                        </div>
                                     </td>
                                     <td className="p-6 text-center">
-                                       {savingId === item.id ? (
-                                          <Loader2 className="animate-spin text-[#D5205D] mx-auto" size={20} />
-                                       ) : (
-                                          <button
-                                             onClick={() => {
-                                                const input = document.querySelector(`input[defaultValue="${item.title}"]`) as HTMLInputElement;
-                                                handleUpdateRegissTitle(item.id, input?.value || item.title);
-                                             }}
-                                             className="bg-white/5 text-slate-400 hover:bg-[#D5205D] hover:text-white p-3 rounded-xl transition-all shadow-md active:scale-90"
-                                          >
-                                             <Save size={18} />
-                                          </button>
-                                       )}
+                                       {savingId === item.id ? <Loader2 className="animate-spin text-[#D5205D] mx-auto" size={20} /> :
+                                          <button onClick={() => {
+                                             const input = document.querySelector(`input[defaultValue="${item.title}"]`) as HTMLInputElement;
+                                             handleUpdateRegissTitle(item.id, input?.value || item.title);
+                                          }} className="bg-white/5 text-slate-400 hover:bg-[#D5205D] hover:text-white p-3 rounded-xl transition-all shadow-md"><Save size={18} /></button>}
                                     </td>
                                  </tr>
                               ))
@@ -445,29 +384,6 @@ export const Admin = () => {
                         </tbody>
                      </table>
                   </div>
-               </div>
-            )}
-
-            {activeTab === 'content' && (
-               <div className="space-y-6 animate-fadeIn">
-                  <div className="flex justify-between items-center bg-[#142239] border border-blue-500/30 p-5 rounded-2xl shadow-lg">
-                     <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center"><Shield className="text-blue-500" /></div>
-                        <div>
-                           <h2 className="text-xl font-bold text-white">Filtro de Moderação Ativo</h2>
-                           <p className="text-slate-400 text-sm">Monitorando posts ofensivos no Feed Social.</p>
-                        </div>
-                     </div>
-                  </div>
-                  {postsList.filter(p => p.content.includes('porra') || p.content.includes('caralho')).map(post => (
-                     <div key={post.id} className="bg-[#142239] border border-red-500/30 p-5 rounded-2xl flex justify-between items-center gap-6">
-                        <div className="flex-1">
-                           <p className="text-xs text-red-400 font-bold uppercase mb-1">Autor: {post.profiles?.full_name}</p>
-                           <p className="text-white text-sm bg-black/20 p-3 rounded-xl">{post.content}</p>
-                        </div>
-                        <button onClick={() => handleDeletePost(post.id)} className="bg-red-500 p-3 rounded-xl text-white"><Trash2 size={16} /></button>
-                     </div>
-                  ))}
                </div>
             )}
 
@@ -490,6 +406,26 @@ export const Admin = () => {
                         </div>
                      ))}
                   </div>
+               </div>
+            )}
+
+            {activeTab === 'content' && (
+               <div className="space-y-6 animate-fadeIn">
+                  <div className="flex justify-between items-center bg-[#142239] border border-blue-500/30 p-5 rounded-2xl shadow-lg">
+                     <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-blue-500/10 rounded-full flex items-center justify-center"><Shield className="text-blue-500" /></div>
+                        <div><h2 className="text-xl font-bold text-white">Filtro de Moderação</h2><p className="text-slate-400 text-sm">Monitorando posts ofensivos no Feed.</p></div>
+                     </div>
+                  </div>
+                  {postsList.filter(p => p.content.includes('porra') || p.content.includes('caralho')).map(post => (
+                     <div key={post.id} className="bg-[#142239] border border-red-500/30 p-5 rounded-2xl flex justify-between items-center gap-6">
+                        <div className="flex-1">
+                           <p className="text-xs text-red-400 font-bold uppercase mb-1">Autor: {post.profiles?.full_name}</p>
+                           <p className="text-white text-sm bg-black/20 p-3 rounded-xl">{post.content}</p>
+                        </div>
+                        <button onClick={() => handleDeletePost(post.id)} className="bg-red-500 p-3 rounded-xl text-white"><Trash2 size={16} /></button>
+                     </div>
+                  ))}
                </div>
             )}
 
@@ -536,8 +472,8 @@ export const Admin = () => {
                      </div>
                   ) : (
                      <div className="bg-[#142239] p-8 rounded-3xl">
-                        <button onClick={() => setSelectedJob(null)} className="text-slate-400 mb-6 flex items-center gap-2 font-bold">← Voltar</button>
-                        <h3 className="text-2xl font-bold mb-6">Match de Candidatos</h3>
+                        <button onClick={() => setSelectedJob(null)} className="text-slate-400 mb-6 flex items-center gap-2 font-bold transition-colors">← Voltar</button>
+                        <h3 className="text-2xl font-bold mb-6">Candidatos Sugeridos</h3>
                         <div className="space-y-4">
                            {suggestedTalents.map(talent => (
                               <div key={talent.id} className="bg-[#0B1320] p-5 rounded-2xl flex items-center justify-between border border-white/5">
@@ -545,7 +481,7 @@ export const Admin = () => {
                                     <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center font-bold">{talent.full_name[0]}</div>
                                     <div><p className="text-white font-bold">{talent.full_name}</p><p className="text-xs text-slate-500">{talent.profession} • {talent.match_score}% Fit</p></div>
                                  </div>
-                                 <button onClick={() => handleSendDirectInvite(talent.id, 'Hospital', 'Gestor')} className="bg-[#142239] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#D5205D] transition-all">Convidar via Push</button>
+                                 <button onClick={() => handleSendDirectInvite(talent.id, 'Hospital Parceiro', 'Gestão')} className="bg-[#142239] text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#D5205D] transition-all">Convidar via Push</button>
                               </div>
                            ))}
                         </div>
