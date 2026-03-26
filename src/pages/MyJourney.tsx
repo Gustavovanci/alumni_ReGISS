@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Save, Plus, Briefcase, GraduationCap, Trash2, Camera, Palette, Send, Edit3, Award, MessageCircle, Lock, Loader2 } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 import { useStore } from '../store/useStore';
+import { toast } from 'sonner';
 
 export const MyJourney = () => {
   const navigate = useNavigate();
@@ -86,7 +87,7 @@ export const MyJourney = () => {
 
     const { error } = await supabase.storage.from('avatars').upload(filePath, file);
     if (error) {
-      toast.error('Erro ao fazer upload');
+      toast.error('Erro ao fazer upload da imagem');
       setUploading(false);
       return;
     }
@@ -113,7 +114,7 @@ export const MyJourney = () => {
     if (error) toast.error('Erro ao salvar perfil');
     else {
       await fetchUserProfile(true);
-      toast.success('Perfil atualizado!');
+      toast.success('Perfil atualizado com sucesso!');
       navigate('/feed');
     }
   };
@@ -185,13 +186,13 @@ export const MyJourney = () => {
           </button>
         </div>
 
-        {/* Seção Perfil */}
+        {/* Perfil */}
         <div className="bg-[#15335E] rounded-3xl p-8 mb-8">
           <div className="flex flex-col md:flex-row gap-8">
             <div className="relative">
               <div className="w-32 h-32 rounded-3xl overflow-hidden border-4 border-[#142239]">
                 {avatarUrl ? (
-                  <img src={avatarUrl} className="w-full h-full object-cover" />
+                  <img src={avatarUrl} className="w-full h-full object-cover" alt={fullName} />
                 ) : (
                   <div className="w-full h-full bg-slate-700 flex items-center justify-center text-5xl font-bold text-slate-400">
                     {fullName[0] || '?'}
@@ -215,18 +216,16 @@ export const MyJourney = () => {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <label className="text-xs uppercase font-bold text-slate-400">Tema do Perfil</label>
-                  <div className="flex gap-3 mt-2">
-                    {['regiss-magenta', 'regiss-petrol', 'regiss-wine'].map((color) => (
-                      <button
-                        key={color}
-                        onClick={() => setThemeColor(color)}
-                        className={`w-10 h-10 rounded-2xl ${color === 'regiss-magenta' ? 'bg-[#D5205D]' : color === 'regiss-petrol' ? 'bg-[#275A80]' : 'bg-[#B32F50]'}`}
-                      />
-                    ))}
-                  </div>
+              <div>
+                <label className="text-xs uppercase font-bold text-slate-400">Tema do Perfil</label>
+                <div className="flex gap-3 mt-2">
+                  {['regiss-magenta', 'regiss-petrol', 'regiss-wine'].map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => setThemeColor(color)}
+                      className={`w-10 h-10 rounded-2xl ${color === 'regiss-magenta' ? 'bg-[#D5205D]' : color === 'regiss-petrol' ? 'bg-[#275A80]' : 'bg-[#B32F50]'}`}
+                    />
+                  ))}
                 </div>
               </div>
 
@@ -258,13 +257,6 @@ export const MyJourney = () => {
               <Plus size={20} /> Nova Experiência
             </button>
           </div>
-
-          {isAdding && (
-            <div className="bg-[#15335E] rounded-3xl p-8 mb-8">
-              {/* Formulário de nova experiência */}
-              {/* (código completo do formulário mantido e polido) */}
-            </div>
-          )}
 
           {journeyItems.map((item) => (
             <div key={item.id} className="bg-[#15335E] rounded-3xl p-6 mb-4 flex justify-between items-center">
