@@ -3,6 +3,7 @@ import { Plus, Edit3, Briefcase, Calendar, X, Globe, Lock, Loader2, Building, Ex
 import { supabase } from '../lib/supabase';
 import { toast } from 'sonner';
 import { useStore } from '../store/useStore';
+import { sendPushNotification } from '../utils/pushNotifications'; // Importação do motor de Push
 
 export const GlobalFAB = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -51,7 +52,7 @@ export const GlobalFAB = () => {
         return () => window.removeEventListener('keydown', handleEsc);
     }, []);
 
-    // Criar Post
+    // Criar Post (NÃO NOTIFICA A REDE)
     const handleCreatePost = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!postContent.trim() || !currentUser) return;
@@ -76,7 +77,7 @@ export const GlobalFAB = () => {
         }
     };
 
-    // Criar Evento
+    // Criar Evento (NÃO NOTIFICA A REDE)
     const handleCreateEvent = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newEvent.title || !newEvent.start_time || !newEvent.end_time || !currentUser) return;
@@ -100,7 +101,7 @@ export const GlobalFAB = () => {
         }
     };
 
-    // Criar Vaga
+    // Criar Vaga (ESTE NOTIFICA A REDE!)
     const handleCreateJob = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newJob.company || !newJob.description || !currentUser) return;
@@ -120,7 +121,21 @@ export const GlobalFAB = () => {
 
             if (error) throw error;
 
-            toast.success('Vaga publicada com sucesso!');
+            // === INÍCIO DO DISPARO DO PUSH ===
+            // Cria um título usando o nome da empresa e um resumo da vaga
+            const pushTitle = `🚀 Nova Vaga: ${newJob.company}`;
+
+            // Garante que a descrição não fique gigantesca na notificação do celular
+            let pushBody = newJob.description.split('\n')[0];
+            if (pushBody.length > 60) {
+                pushBody = pushBody.substring(0, 60) + '...';
+            }
+
+            // Dispara a Edge Function silenciosamente em background
+            sendPushNotification(pushTitle, pushBody, '/jobs');
+            // === FIM DO DISPARO ===
+
+            toast.success('Vaga publicada e rede notificada!');
             setActiveModal(null);
             setNewJob({ company: '', link: '', description: '' });
         } catch (err: any) {
@@ -255,7 +270,7 @@ export const GlobalFAB = () => {
                                                 type="datetime-local"
                                                 value={newEvent.start_time}
                                                 onChange={(e) => setNewEvent({ ...newEvent, start_time: e.target.value })}
-                                                className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-[#D5205D]"
+                                                className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-[#D5205D] [color-scheme:dark]"
                                                 required
                                             />
                                         </div>
@@ -265,7 +280,7 @@ export const GlobalFAB = () => {
                                                 type="datetime-local"
                                                 value={newEvent.end_time}
                                                 onChange={(e) => setNewEvent({ ...newEvent, end_time: e.target.value })}
-                                                className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-[#D5205D]"
+                                                className="w-full bg-[#142239] border border-white/10 rounded-2xl p-4 text-white outline-none focus:border-[#D5205D] [color-scheme:dark]"
                                                 required
                                             />
                                         </div>
@@ -280,7 +295,7 @@ export const GlobalFAB = () => {
                                 </form>
                             )}
 
-                            {/* Modal Vaga */}
+                            {/* Modal Vaga (AQUELA QUE NOTIFICA) */}
                             {activeModal === 'job' && (
                                 <form onSubmit={handleCreateJob} className="space-y-4">
                                     <input
@@ -292,7 +307,7 @@ export const GlobalFAB = () => {
                                         required
                                     />
                                     <input
-                                        type="text"
+                                        type="url"
                                         placeholder="Link da vaga (opcional)"
                                         value={newJob.link}
                                         onChange={(e) => setNewJob({ ...newJob, link: e.target.value })}
@@ -310,7 +325,7 @@ export const GlobalFAB = () => {
                                         disabled={isSubmitting}
                                         className="w-full py-4 bg-amber-600 hover:bg-amber-500 rounded-2xl font-bold text-white flex items-center justify-center gap-2 disabled:opacity-50"
                                     >
-                                        {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : 'Publicar Vaga'}
+                                        {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : 'Publicar Vaga e Notificar'}
                                     </button>
                                 </form>
                             )}

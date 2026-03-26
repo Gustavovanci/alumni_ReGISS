@@ -29,7 +29,6 @@ export const subscribeToPushNotifications = async () => {
 
     const registration = await navigator.serviceWorker.ready;
     
-    // Inscreve o aparelho
     const subscription = await registration.pushManager.subscribe({
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(PUBLIC_VAPID_KEY)
@@ -43,7 +42,6 @@ export const subscribeToPushNotifications = async () => {
       return;
     }
 
-    // Salva no banco de dados
     const { error } = await supabase.from('push_subscriptions').upsert({
       user_id: user.id,
       endpoint: subData.endpoint,
@@ -61,5 +59,25 @@ export const subscribeToPushNotifications = async () => {
   } catch (error: any) {
     console.error('Erro geral ao assinar push:', error);
     toast.error('Falha ao ativar notificações. Tente novamente mais tarde.');
+  }
+};
+
+// --- NOVA FUNÇÃO DE DISPARO ---
+export const sendPushNotification = async (title: string, body: string, url: string = '/jobs') => {
+  try {
+    const { data, error } = await supabase.functions.invoke('send-push', {
+      body: { title, body, url }
+    });
+
+    if (error) {
+      console.error('Erro ao chamar a função de Push:', error);
+      return false;
+    }
+
+    console.log('Push enviado com sucesso para a rede!', data);
+    return true;
+  } catch (err) {
+    console.error('Falha na requisição do Push:', err);
+    return false;
   }
 };
