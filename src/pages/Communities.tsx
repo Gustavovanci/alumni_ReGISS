@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useStore } from '../store/useStore';
-import { Users, MessageSquare, Search, ArrowLeft, Activity, Pin, Hash, ChevronRight, Plus, X, Loader2, Send, Trash2 } from 'lucide-react';
+import { Users, MessageSquare, Search, ArrowLeft, Activity, ChevronRight, Plus, X, Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const PREDEFINED_COMMUNITIES = [
-    { id: 'prof-fisio', name: 'Fisioterapia', match_key: 'Fisioterapia', type: 'profession', color: 'from-purple-600 to-indigo-600' },
-    { id: 'prof-nutri', name: 'Nutrição', match_key: 'Nutrição', type: 'profession', color: 'from-emerald-500 to-teal-600' },
-    { id: 'prof-enfermagem', name: 'Enfermagem', match_key: 'Enfermagem', type: 'profession', color: 'from-blue-500 to-cyan-600' },
-    { id: 'prof-to', name: 'Terapia Ocupacional', match_key: 'Terapia Ocupacional', type: 'profession', color: 'from-amber-500 to-orange-600' },
-    { id: 'prof-fono', name: 'Fonoaudiologia', match_key: 'Fonoaudiologia', type: 'profession', color: 'from-pink-500 to-rose-600' },
+    // PROFISSÕES
+    { id: 'prof-fisio', name: 'Fisioterapia', match_key: 'Fisioterapeuta', type: 'profession', color: 'from-purple-600 to-indigo-600' },
+    { id: 'prof-nutri', name: 'Nutrição', match_key: 'Nutricionista', type: 'profession', color: 'from-emerald-500 to-teal-600' },
+    { id: 'prof-enfermagem', name: 'Enfermagem', match_key: 'Enfermeiro(a)', type: 'profession', color: 'from-blue-500 to-cyan-600' },
+    { id: 'prof-to', name: 'Terapia Ocupacional', match_key: 'Terapeuta Ocupacional', type: 'profession', color: 'from-amber-500 to-orange-600' },
+    { id: 'prof-fono', name: 'Fonoaudiologia', match_key: 'Fonoaudiólogo(a)', type: 'profession', color: 'from-pink-500 to-rose-600' },
 
+    // TURMAS
     { id: 'turma-1', name: 'Turma 1 (2019)', match_key: '2019', type: 'class', color: 'from-slate-600 to-slate-800' },
     { id: 'turma-2', name: 'Turma 2 (2020)', match_key: '2020', type: 'class', color: 'from-slate-600 to-slate-800' },
     { id: 'turma-3', name: 'Turma 3 (2021)', match_key: '2021', type: 'class', color: 'from-slate-600 to-slate-800' },
@@ -52,7 +54,6 @@ export const Communities = () => {
         initData();
     }, [fetchUserProfile, fetchAllProfiles]);
 
-    // Realtime para tópicos
     useEffect(() => {
         if (!selectedCommunity) return;
         const channel = supabase.channel(`community_${selectedCommunity.id}`)
@@ -66,12 +67,9 @@ export const Communities = () => {
             })
             .subscribe();
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [selectedCommunity]);
+        return () => { supabase.removeChannel(channel); };
+    }, [selectedCommunity, selectedPost]);
 
-    // Realtime para comentários
     useEffect(() => {
         if (!selectedPost || selectedPost.isOfficial) return;
         const channel = supabase.channel(`post_${selectedPost.id}`)
@@ -84,9 +82,7 @@ export const Communities = () => {
             })
             .subscribe();
 
-        return () => {
-            supabase.removeChannel(channel);
-        };
+        return () => { supabase.removeChannel(channel); };
     }, [selectedPost]);
 
     useEffect(() => {
@@ -94,8 +90,10 @@ export const Communities = () => {
             const calculated = PREDEFINED_COMMUNITIES.map(community => {
                 let realCount = 0;
                 if (community.type === 'profession') {
+                    // Conta quantos perfis tem essa exata profissão
                     realCount = allProfiles.filter((p: any) => p.profession === community.match_key).length;
                 } else if (community.type === 'class') {
+                    // Conta quantos perfis entraram nesse exato ano
                     realCount = allProfiles.filter((p: any) => String(p.entry_year) === community.match_key).length;
                 }
                 return { ...community, members: realCount };
@@ -115,11 +113,7 @@ export const Communities = () => {
     const fetchComments = async () => {
         if (!selectedPost || selectedPost.isOfficial) return;
         setLoadingComments(true);
-        const { data } = await supabase
-            .from('community_comments')
-            .select('*, profiles(full_name, role)')
-            .eq('post_id', selectedPost.id)
-            .order('created_at', { ascending: true });
+        const { data } = await supabase.from('community_comments').select('*, profiles(full_name, role)').eq('post_id', selectedPost.id).order('created_at', { ascending: true });
         setComments(data || []);
         setLoadingComments(false);
     };
@@ -128,23 +122,13 @@ export const Communities = () => {
         setSelectedCommunity(community);
         setSelectedPost(null);
         setFetchingPosts(true);
-
-        const { data: posts } = await supabase
-            .from('community_posts')
-            .select('*, profiles(full_name, role)')
-            .eq('community_id', community.id)
-            .order('created_at', { ascending: false })
-            .limit(10);
-
+        const { data: posts } = await supabase.from('community_posts').select('*, profiles(full_name, role)').eq('community_id', community.id).order('created_at', { ascending: false }).limit(20);
         setCommunityPosts(posts || []);
         setFetchingPosts(false);
     };
 
     const handleCreateTopic = async () => {
-        if (!newPostTitle.trim() || !newPostContent.trim()) {
-            return toast.error("Preencha título e descrição!");
-        }
-
+        if (!newPostTitle.trim() || !newPostContent.trim()) return toast.error("Preencha título e descrição!");
         setIsSubmitting(true);
         try {
             const { data, error } = await supabase.from('community_posts').insert({
@@ -160,7 +144,6 @@ export const Communities = () => {
             setIsCreatingPost(false);
             setNewPostTitle('');
             setNewPostContent('');
-            setCommunityPosts(prev => [data, ...prev]);
         } catch (error: any) {
             toast.error(error.message);
         } finally {
@@ -170,18 +153,14 @@ export const Communities = () => {
 
     const handleCreateComment = async () => {
         if (!newComment.trim() || !selectedPost || selectedPost.isOfficial) return;
-
         setIsSubmittingComment(true);
         try {
-            const { data, error } = await supabase.from('community_comments').insert({
+            const { error } = await supabase.from('community_comments').insert({
                 post_id: selectedPost.id,
                 user_id: userProfile.uid,
                 content: newComment
-            }).select('*, profiles(full_name, role)').single();
-
+            });
             if (error) throw error;
-
-            setComments(prev => [...prev, data]);
             setNewComment('');
             toast.success('Comentário enviado!');
         } catch (error: any) {
@@ -195,15 +174,14 @@ export const Communities = () => {
         e.stopPropagation();
         if (!confirm('Apagar tópico?')) return;
         await supabase.from('community_posts').delete().eq('id', postId);
-        setCommunityPosts(prev => prev.filter(p => p.id !== postId));
     };
 
     const handleDeleteComment = async (commentId: string) => {
         if (!confirm('Apagar comentário?')) return;
         await supabase.from('community_comments').delete().eq('id', commentId);
-        setComments(prev => prev.filter(c => c.id !== commentId));
     };
 
+    // A MÁGICA ACONTECE AQUI: A pessoa pertence à comunidade se a profissão OU o ano baterem
     const myCommunities = communitiesWithRealCounts.filter(c =>
         c.match_key === userProfile?.profession || c.match_key === String(userProfile?.entry_year)
     );
@@ -225,9 +203,9 @@ export const Communities = () => {
                             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
                                 <Users className="text-[#D5205D]" size={32} /> Comunidades
                             </h1>
-                            <p className="text-slate-400">Conecte-se com colegas da sua profissão e turma.</p>
+                            <p className="text-slate-400">Conecte-se com colegas da sua profissão e da sua turma.</p>
                         </div>
-                        <div className="bg-[#142239] border border-white/10 rounded-2xl flex items-center px-4 w-full md:w-80 focus-within:border-[#D5205D]">
+                        <div className="bg-[#142239] border border-white/10 rounded-2xl flex items-center px-4 w-full md:w-80 focus-within:border-[#D5205D] transition-colors">
                             <Search size={18} className="text-slate-500" />
                             <input
                                 type="text"
@@ -239,131 +217,168 @@ export const Communities = () => {
                         </div>
                     </div>
 
-                    {/* Minhas Comunidades */}
+                    {/* MINHAS COMUNIDADES (Profissão + Turma) */}
                     <div className="mb-12">
                         <h2 className="text-xl font-bold text-white mb-4">Minhas Comunidades</h2>
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                            {filterBySearch(myCommunities).map(community => (
-                                <div
-                                    key={community.id}
-                                    onClick={() => handleOpenCommunity(community)}
-                                    className="bg-[#15335E] border border-white/10 hover:border-[#D5205D] rounded-3xl p-6 cursor-pointer transition-all hover:-translate-y-1"
-                                >
-                                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${community.color} flex items-center justify-center mb-4`}>
-                                        {community.type === 'profession' ? <Activity size={28} className="text-white" /> : <Users size={28} className="text-white" />}
+                        {myCommunities.length === 0 ? (
+                            <p className="text-slate-400 italic text-sm">Você ainda não preencheu sua Profissão ou Ano de Entrada no perfil.</p>
+                        ) : (
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                {filterBySearch(myCommunities).map(community => (
+                                    <div
+                                        key={community.id}
+                                        onClick={() => handleOpenCommunity(community)}
+                                        className="bg-[#15335E] border border-white/10 hover:border-[#D5205D] rounded-3xl p-6 cursor-pointer transition-all hover:-translate-y-1 shadow-lg"
+                                    >
+                                        <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${community.color} flex items-center justify-center mb-4 shadow-inner`}>
+                                            {community.type === 'profession' ? <Activity size={28} className="text-white" /> : <Users size={28} className="text-white" />}
+                                        </div>
+                                        <h3 className="font-bold text-white text-lg leading-tight mb-1">{community.name}</h3>
+                                        <p className="text-slate-400 text-xs font-medium">{community.members} Membros Reais</p>
                                     </div>
-                                    <h3 className="font-bold text-white text-lg">{community.name}</h3>
-                                    <p className="text-slate-400 text-sm mt-1">{community.members} membros</p>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Explorar */}
+                    {/* EXPLORAR OUTRAS */}
                     <div>
-                        <h2 className="text-xl font-bold text-white mb-4">Explorar Comunidades</h2>
+                        <h2 className="text-xl font-bold text-white mb-4">Explorar outras áreas</h2>
                         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
                             {filterBySearch(otherCommunities).map(community => (
                                 <div
                                     key={community.id}
                                     onClick={() => handleOpenCommunity(community)}
-                                    className="bg-[#142239] border border-white/10 hover:border-white/30 rounded-3xl p-6 cursor-pointer transition-all hover:-translate-y-1"
+                                    className="bg-[#142239] border border-white/5 hover:border-white/20 rounded-3xl p-6 cursor-pointer transition-all hover:-translate-y-1"
                                 >
-                                    <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${community.color} flex items-center justify-center mb-4 opacity-80`}>
-                                        {community.type === 'profession' ? <Activity size={24} className="text-white" /> : <Users size={24} className="text-white" />}
+                                    <div className={`w-10 h-10 rounded-2xl bg-gradient-to-br ${community.color} flex items-center justify-center mb-3 opacity-60`}>
+                                        {community.type === 'profession' ? <Activity size={20} className="text-white" /> : <Users size={20} className="text-white" />}
                                     </div>
-                                    <h3 className="font-bold text-slate-300">{community.name}</h3>
-                                    <p className="text-xs text-slate-500 mt-1">{community.members} membros</p>
+                                    <h3 className="font-bold text-slate-300 text-sm">{community.name}</h3>
+                                    <p className="text-[10px] text-slate-500 mt-1 uppercase tracking-wider">{community.members} Membros</p>
                                 </div>
                             ))}
                         </div>
                     </div>
                 </div>
             ) : !selectedPost ? (
-                /* Dentro da Comunidade */
+                /* DENTRO DA COMUNIDADE */
                 <div className="animate-fadeIn">
-                    <button onClick={() => setSelectedCommunity(null)} className="flex items-center gap-2 text-slate-400 hover:text-white mb-6">
-                        <ArrowLeft size={18} /> Voltar
+                    <button onClick={() => setSelectedCommunity(null)} className="flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors">
+                        <ArrowLeft size={18} /> Voltar para Comunidades
                     </button>
 
-                    <div className={`bg-gradient-to-r ${selectedCommunity.color} rounded-3xl p-8 text-white`}>
-                        <h1 className="text-4xl font-bold">{selectedCommunity.name}</h1>
-                        <p className="text-white/80">{selectedCommunity.members} membros</p>
+                    <div className={`bg-gradient-to-r ${selectedCommunity.color} rounded-3xl p-8 text-white shadow-xl`}>
+                        <h1 className="text-4xl font-bold mb-2">{selectedCommunity.name}</h1>
+                        <p className="text-white/80 font-medium flex items-center gap-2"><Users size={16} /> {selectedCommunity.members} Profissionais ReGISS</p>
                     </div>
 
-                    {/* Tópicos */}
                     <div className="mt-8">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-lg flex items-center gap-2">
-                                <MessageSquare size={20} /> Tópicos
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="font-bold text-xl flex items-center gap-2 text-white">
+                                <MessageSquare size={24} className="text-[#D5205D]" /> Mural de Tópicos
                             </h3>
-                            <button onClick={() => setIsCreatingPost(!isCreatingPost)} className="bg-[#D5205D] text-white px-5 py-2 rounded-2xl font-bold flex items-center gap-2">
+                            <button onClick={() => setIsCreatingPost(!isCreatingPost)} className="bg-[#D5205D] hover:bg-pink-600 text-white px-5 py-2.5 rounded-2xl font-bold flex items-center gap-2 transition-colors shadow-lg active:scale-95">
                                 {isCreatingPost ? <X size={18} /> : <Plus size={18} />} Novo Tópico
                             </button>
                         </div>
 
                         {isCreatingPost && (
-                            <div className="bg-[#142239] p-6 rounded-3xl mb-6">
+                            <div className="bg-[#15335E] border border-white/10 p-6 rounded-3xl mb-8 shadow-2xl animate-in slide-in-from-top-4">
                                 <input
                                     type="text"
-                                    placeholder="Título do tópico"
+                                    placeholder="Qual o assunto? (Ex: Dúvida sobre carga horária)"
                                     value={newPostTitle}
                                     onChange={e => setNewPostTitle(e.target.value)}
-                                    className="w-full bg-[#15335E] border border-white/10 rounded-2xl p-4 mb-4 text-white outline-none"
+                                    className="w-full bg-[#142239] border border-white/5 rounded-2xl p-4 mb-4 text-white outline-none focus:border-[#D5205D] transition-colors"
                                 />
                                 <textarea
-                                    placeholder="Descrição..."
+                                    placeholder="Escreva os detalhes aqui..."
                                     value={newPostContent}
                                     onChange={e => setNewPostContent(e.target.value)}
-                                    className="w-full bg-[#15335E] border border-white/10 rounded-2xl p-4 h-32 text-white outline-none"
+                                    className="w-full bg-[#142239] border border-white/5 rounded-2xl p-4 h-32 text-white outline-none focus:border-[#D5205D] transition-colors resize-none"
                                 />
-                                <button onClick={handleCreateTopic} className="mt-4 w-full bg-[#D5205D] py-3 rounded-2xl font-bold">Publicar Tópico</button>
+                                <button onClick={handleCreateTopic} disabled={isSubmitting} className="mt-4 w-full bg-[#D5205D] py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-pink-600 transition-colors shadow-lg">
+                                    {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : 'Publicar Tópico'}
+                                </button>
                             </div>
                         )}
 
-                        {/* Lista de tópicos */}
-                        {communityPosts.map(post => (
-                            <div key={post.id} onClick={() => setSelectedPost(post)} className="bg-[#142239] border border-white/5 p-5 rounded-3xl mb-4 cursor-pointer hover:border-[#D5205D]/30 flex justify-between items-center">
-                                <div>
-                                    <h4 className="font-bold">{post.title}</h4>
-                                    <p className="text-xs text-slate-400">por {post.profiles?.full_name}</p>
-                                </div>
-                                <ChevronRight />
+                        {fetchingPosts ? (
+                            <div className="flex justify-center py-10"><Loader2 className="animate-spin text-[#D5205D]" size={32} /></div>
+                        ) : communityPosts.length === 0 ? (
+                            <div className="text-center py-16 bg-[#142239] border border-white/5 border-dashed rounded-3xl">
+                                <MessageSquare size={48} className="mx-auto text-slate-600 mb-4 opacity-50" />
+                                <p className="text-slate-400 font-medium">Nenhum tópico criado ainda. Seja o primeiro a puxar assunto!</p>
                             </div>
-                        ))}
+                        ) : (
+                            <div className="space-y-4">
+                                {communityPosts.map(post => (
+                                    <div key={post.id} onClick={() => setSelectedPost(post)} className="bg-[#142239] border border-white/5 p-6 rounded-3xl cursor-pointer hover:border-[#D5205D]/50 hover:bg-[#15335E] transition-all flex justify-between items-center group shadow-md">
+                                        <div className="flex-1 pr-4">
+                                            <h4 className="font-bold text-white text-lg group-hover:text-[#D5205D] transition-colors line-clamp-1">{post.title}</h4>
+                                            <p className="text-sm text-slate-400 mt-1 flex items-center gap-1"><img src={`https://api.dicebear.com/7.x/initials/svg?seed=${post.profiles?.full_name}&backgroundColor=142239`} className="w-4 h-4 rounded-full" alt="avatar" /> Por {post.profiles?.full_name}</p>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            {post.user_id === userProfile?.uid && (
+                                                <button onClick={(e) => handleDeleteTopic(e, post.id)} className="p-2 text-slate-500 hover:bg-red-500/20 hover:text-red-400 rounded-xl transition-colors"><Trash2 size={18} /></button>
+                                            )}
+                                            <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-[#D5205D] transition-colors"><ChevronRight className="text-slate-400 group-hover:text-white" size={20} /></div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             ) : (
-                /* Dentro do Tópico */
-                <div className="animate-fadeIn">
-                    <button onClick={() => setSelectedPost(null)} className="flex items-center gap-2 text-slate-400 hover:text-white mb-6">
-                        <ArrowLeft size={18} /> Voltar
+                /* DENTRO DO TÓPICO (LENDO E COMENTANDO) */
+                <div className="animate-fadeIn max-w-4xl mx-auto">
+                    <button onClick={() => setSelectedPost(null)} className="flex items-center gap-2 text-slate-400 hover:text-white mb-6 transition-colors">
+                        <ArrowLeft size={18} /> Voltar aos tópicos
                     </button>
 
-                    <div className="bg-[#15335E] rounded-3xl p-8">
-                        <h2 className="text-2xl font-bold text-white">{selectedPost.title}</h2>
-                        <p className="text-slate-300 mt-6 whitespace-pre-wrap">{selectedPost.content}</p>
+                    <div className="bg-[#15335E] border border-white/10 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-1.5 h-full bg-[#D5205D]"></div>
+                        <h2 className="text-3xl font-bold text-white mb-2 leading-tight">{selectedPost.title}</h2>
+                        <p className="text-xs text-slate-400 mb-8 uppercase font-bold tracking-wider">Publicado por {selectedPost.profiles?.full_name}</p>
+                        <div className="text-slate-200 text-lg leading-relaxed whitespace-pre-wrap">{selectedPost.content}</div>
                     </div>
 
-                    {/* Comentários */}
-                    <div className="mt-8">
-                        <h3 className="font-bold text-lg mb-4">Comentários</h3>
-                        {comments.map(c => (
-                            <div key={c.id} className="bg-[#142239] p-5 rounded-3xl mb-4">
-                                <p className="font-bold text-sm">{c.profiles?.full_name}</p>
-                                <p className="text-slate-300">{c.content}</p>
-                            </div>
-                        ))}
+                    <div className="mt-12">
+                        <h3 className="font-bold text-xl mb-6 text-white flex items-center gap-2"><MessageSquare size={20} className="text-[#D5205D]" /> Discussão ({comments.length})</h3>
 
-                        <div className="flex gap-3 mt-6">
+                        <div className="space-y-4 mb-8">
+                            {loadingComments ? <div className="flex justify-center"><Loader2 className="animate-spin text-[#D5205D]" /></div> :
+                                comments.length === 0 ? <p className="text-slate-500 italic text-sm">Ninguém respondeu ainda.</p> :
+                                    comments.map(c => (
+                                        <div key={c.id} className="bg-[#142239] border border-white/5 p-6 rounded-3xl relative group">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <p className="font-bold text-white text-sm flex items-center gap-2">
+                                                    <div className="w-6 h-6 rounded-full bg-[#15335E] border border-white/10 flex items-center justify-center text-[10px] text-white">{c.profiles?.full_name[0]}</div>
+                                                    {c.profiles?.full_name}
+                                                </p>
+                                                {c.user_id === userProfile?.uid && (
+                                                    <button onClick={() => handleDeleteComment(c.id)} className="text-slate-600 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+                                                )}
+                                            </div>
+                                            <p className="text-slate-300 ml-8 text-[15px]">{c.content}</p>
+                                        </div>
+                                    ))}
+                        </div>
+
+                        <div className="flex flex-col md:flex-row gap-3 bg-[#15335E] p-4 rounded-3xl border border-white/10 focus-within:border-[#D5205D] transition-colors shadow-lg">
                             <input
                                 type="text"
                                 value={newComment}
                                 onChange={e => setNewComment(e.target.value)}
-                                placeholder="Escreva um comentário..."
-                                className="flex-1 bg-[#142239] border border-white/10 rounded-3xl px-5 py-4 outline-none"
+                                onKeyDown={e => e.key === 'Enter' && handleCreateComment()}
+                                placeholder="Escreva sua resposta..."
+                                className="flex-1 bg-transparent px-2 py-2 text-white outline-none"
                             />
-                            <button onClick={handleCreateComment} className="bg-[#D5205D] px-8 rounded-3xl text-white font-bold">Enviar</button>
+                            <button onClick={handleCreateComment} disabled={isSubmittingComment || !newComment.trim()} className="bg-[#D5205D] hover:bg-pink-600 disabled:opacity-50 px-8 py-3 rounded-2xl text-white font-bold transition-all shadow-md active:scale-95 flex items-center gap-2">
+                                {isSubmittingComment ? <Loader2 className="animate-spin" size={18} /> : 'Responder'}
+                            </button>
                         </div>
                     </div>
                 </div>

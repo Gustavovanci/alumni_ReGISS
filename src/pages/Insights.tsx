@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { Building, GraduationCap, ThumbsUp, ThumbsDown } from 'lucide-react';
+import { Building, GraduationCap, ThumbsUp, ThumbsDown, Award, Trophy, Medal } from 'lucide-react';
 import { StarRating } from '../components/StarRating';
 
 const InsightSkeleton = () => (
@@ -44,11 +44,18 @@ export const Insights = () => {
       }
 
       const grouped = data.reduce((acc: any, curr: any) => {
-        const name = curr.organization;
-        if (!acc[name]) {
-          acc[name] = {
-            name,
-            type: curr.type,
+        const name = curr.organization || 'Não informado';
+
+        const isOfficialRegiss = curr.type === 'regiss';
+        const resolvedType = isOfficialRegiss ? 'education' : curr.type;
+
+        const groupKey = isOfficialRegiss ? 'OFFICIAL_REGISS_PROGRAM' : `${name}_${resolvedType}`;
+
+        if (!acc[groupKey]) {
+          acc[groupKey] = {
+            name: isOfficialRegiss ? 'Residência ReGISS (HCFMUSP)' : name,
+            type: resolvedType,
+            isOfficialRegiss: isOfficialRegiss,
             count: 0,
             totalRating: 0,
             pros: [],
@@ -56,11 +63,16 @@ export const Insights = () => {
             benefits: new Set()
           };
         }
-        acc[name].count++;
-        acc[name].totalRating += curr.rating || 0;
-        if (curr.pros) acc[name].pros.push(curr.pros);
-        if (curr.cons) acc[name].cons.push(curr.cons);
-        if (curr.benefits) curr.benefits.forEach((b: string) => acc[name].benefits.add(b));
+
+        acc[groupKey].count++;
+        acc[groupKey].totalRating += curr.rating || 0;
+
+        if (curr.pros && curr.pros.trim() !== '') acc[groupKey].pros.push(curr.pros);
+        if (curr.cons && curr.cons.trim() !== '') acc[groupKey].cons.push(curr.cons);
+        if (curr.benefits && Array.isArray(curr.benefits)) {
+          curr.benefits.forEach((b: string) => acc[groupKey].benefits.add(b));
+        }
+
         return acc;
       }, {});
 
@@ -70,7 +82,13 @@ export const Insights = () => {
         benefits: Array.from(c.benefits)
       })).sort((a: any, b: any) => parseFloat(b.avgRating) - parseFloat(a.avgRating));
 
-      setCompanies(result);
+      const finalResult = result.sort((a: any, b: any) => {
+        if (a.isOfficialRegiss) return -1;
+        if (b.isOfficialRegiss) return 1;
+        return 0;
+      });
+
+      setCompanies(finalResult);
       setLoading(false);
     };
 
@@ -100,8 +118,8 @@ export const Insights = () => {
                 key={f.id}
                 onClick={() => setFilter(f.id as any)}
                 className={`px-6 py-2 rounded-xl text-xs font-bold transition-all uppercase whitespace-nowrap ${filter === f.id
-                    ? 'bg-[#D5205D] text-white shadow-lg'
-                    : 'text-slate-400 hover:text-white hover:bg-white/5'
+                  ? 'bg-[#D5205D] text-white shadow-lg'
+                  : 'text-slate-400 hover:text-white hover:bg-white/5'
                   }`}
               >
                 {f.label}
@@ -119,76 +137,121 @@ export const Insights = () => {
                 <p className="text-slate-400 font-bold">Nenhuma avaliação encontrada.</p>
               </div>
             ) : (
-              filteredCompanies.map((comp, i) => (
-                <div
-                  key={comp.name}
-                  className="bg-[#15335E] border border-white/5 rounded-3xl p-6 md:p-8 shadow-xl hover:border-white/20 transition-all relative overflow-hidden"
-                >
-                  {i < 3 && (
-                    <div className="absolute top-0 right-0 bg-yellow-500/20 text-yellow-400 text-xs font-bold px-4 py-1.5 rounded-bl-3xl">
-                      #{i + 1} Melhor Avaliada
-                    </div>
-                  )}
+              filteredCompanies.map((comp, i) => {
 
-                  <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-[#142239] rounded-2xl flex items-center justify-center border border-white/5">
-                        {comp.type === 'job' ? (
-                          <Building size={28} className="text-slate-400" />
-                        ) : (
-                          <GraduationCap size={28} className="text-slate-400" />
-                        )}
+                const isRegissCard = comp.isOfficialRegiss;
+
+                // LÓGICA DO PÓDIO OLÍMPICO (Ignorando o ReGISS na contagem)
+                const hasOfficialInFilter = filteredCompanies.some(c => c.isOfficialRegiss);
+                const actualRank = hasOfficialInFilter ? i : i + 1;
+
+                let badgeConfig = null;
+                if (!isRegissCard) {
+                  if (actualRank === 1) {
+                    badgeConfig = { icon: Trophy, color: 'text-yellow-400', bg: 'bg-yellow-500/20', label: '1º Lugar' };
+                  } else if (actualRank === 2) {
+                    badgeConfig = { icon: Medal, color: 'text-gray-300', bg: 'bg-gray-400/20', label: '2º Lugar' };
+                  } else if (actualRank === 3) {
+                    badgeConfig = { icon: Medal, color: 'text-orange-400', bg: 'bg-orange-500/20', label: '3º Lugar' };
+                  }
+                }
+
+                return (
+                  <div
+                    key={comp.name}
+                    className={`border rounded-[2rem] p-6 md:p-8 transition-all relative overflow-hidden group
+                      ${isRegissCard
+                        ? 'bg-gradient-to-br from-[#15335E] to-[#B32F50]/20 border-[#D5205D]/50 shadow-[0_10px_30px_rgba(213,32,93,0.15)] hover:border-[#D5205D] mb-4'
+                        : 'bg-[#15335E] border-white/5 shadow-xl hover:border-white/20'}`}
+                  >
+
+                    {isRegissCard && (
+                      <div className="absolute top-8 left-0 w-1.5 h-16 bg-[#D5205D] rounded-r-full shadow-[0_0_15px_rgba(213,32,93,1)]"></div>
+                    )}
+
+                    {/* RENDERIZAÇÃO DA MEDALHA/TROFÉU */}
+                    {badgeConfig && (
+                      <div className={`absolute top-0 right-0 ${badgeConfig.bg} ${badgeConfig.color} text-[10px] font-black px-4 py-1.5 rounded-bl-2xl uppercase tracking-wider flex items-center gap-1.5 shadow-sm`}>
+                        <badgeConfig.icon size={14} className={badgeConfig.color} />
+                        {badgeConfig.label}
                       </div>
-                      <div>
-                        <h3 className="text-2xl font-bold text-white">{comp.name}</h3>
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {comp.benefits.map((b: string, idx: number) => (
-                            <span
-                              key={idx}
-                              className="text-xs bg-[#142239] text-blue-400 font-bold px-3 py-1 rounded-lg border border-white/5"
-                            >
-                              {b}
-                            </span>
-                          ))}
+                    )}
+
+                    {isRegissCard && (
+                      <div className="absolute top-0 right-0 bg-[#D5205D] text-white text-[10px] font-black px-5 py-1.5 rounded-bl-2xl uppercase tracking-wider shadow-lg flex items-center gap-1.5">
+                        <Award size={14} className="text-white" />
+                        Programa Oficial
+                      </div>
+                    )}
+
+                    <div className="flex flex-col md:flex-row justify-between items-start mb-8 gap-6 pl-4 md:pl-0">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-inner
+                          ${isRegissCard ? 'bg-[#142239] border-[#D5205D]/30' : 'bg-[#142239] border-white/5'}`}>
+                          {isRegissCard ? (
+                            <Award size={30} className="text-[#D5205D]" />
+                          ) : comp.type === 'job' ? (
+                            <Building size={28} className="text-slate-400" />
+                          ) : (
+                            <GraduationCap size={28} className="text-slate-400" />
+                          )}
+                        </div>
+                        <div>
+                          <h3 className={`text-2xl font-bold ${isRegissCard ? 'text-white' : 'text-white'}`}>{comp.name}</h3>
+
+                          {comp.benefits && comp.benefits.length > 0 && (
+                            <div className="flex flex-wrap gap-2 mt-3">
+                              {comp.benefits.map((b: string, idx: number) => (
+                                <span key={idx} className="text-xs bg-[#142239] text-blue-400 font-bold px-3 py-1 rounded-lg border border-blue-500/20">
+                                  {b}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
+
+                      <div className="text-left md:text-right w-full md:w-auto">
+                        <div className="flex items-center gap-3 bg-[#142239] px-6 py-4 rounded-2xl border border-white/5 shadow-inner">
+                          <span className="text-4xl font-bold text-white">{comp.avgRating}</span>
+                          <StarRating rating={parseFloat(comp.avgRating)} readonly size={26} />
+                        </div>
+                        <span className="text-xs font-bold text-slate-500 mt-3 block uppercase tracking-widest text-center md:text-right">
+                          Baseado em {comp.count} {comp.count === 1 ? 'Avaliação' : 'Avaliações'}
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="text-left md:text-right">
-                      <div className="flex items-center gap-3 bg-[#142239] px-5 py-3 rounded-2xl border border-white/5">
-                        <span className="text-4xl font-bold text-white">{comp.avgRating}</span>
-                        <StarRating rating={parseFloat(comp.avgRating)} readonly size={26} />
+                    {(comp.pros.length > 0 || comp.cons.length > 0) && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#142239]/60 rounded-2xl p-6 md:p-8 border border-white/5">
+                        <div>
+                          <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-4">
+                            <ThumbsUp size={16} /> O que a rede adorou
+                          </div>
+                          <ul className="space-y-3">
+                            {comp.pros.slice(0, 3).map((p: string, idx: number) => (
+                              <li key={idx} className="text-sm text-slate-300 italic relative pl-4 before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:bg-emerald-500/50 before:rounded-full">"{p}"</li>
+                            ))}
+                            {comp.pros.length === 0 && <li className="text-sm text-slate-500 italic">Nenhum pró registrado.</li>}
+                          </ul>
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2 text-red-400 text-xs font-bold uppercase tracking-wider mb-4">
+                            <ThumbsDown size={16} /> Pontos de atenção
+                          </div>
+                          <ul className="space-y-3">
+                            {comp.cons.slice(0, 3).map((c: string, idx: number) => (
+                              <li key={idx} className="text-sm text-slate-300 italic relative pl-4 before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:bg-red-500/50 before:rounded-full">"{c}"</li>
+                            ))}
+                            {comp.cons.length === 0 && <li className="text-sm text-slate-500 italic">Nenhum contra registrado.</li>}
+                          </ul>
+                        </div>
                       </div>
-                      <span className="text-xs text-slate-500 mt-2 block">
-                        {comp.count} avaliações na rede
-                      </span>
-                    </div>
-                  </div>
+                    )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-[#142239]/60 rounded-2xl p-6 border border-white/5">
-                    <div>
-                      <div className="flex items-center gap-2 text-green-400 text-xs font-bold uppercase mb-3">
-                        <ThumbsUp size={14} /> Prós
-                      </div>
-                      <ul className="space-y-2">
-                        {comp.pros.slice(0, 3).map((p: string, idx: number) => (
-                          <li key={idx} className="text-sm text-slate-300 italic">"{p}"</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 text-red-400 text-xs font-bold uppercase mb-3">
-                        <ThumbsDown size={14} /> Contras
-                      </div>
-                      <ul className="space-y-2">
-                        {comp.cons.slice(0, 3).map((c: string, idx: number) => (
-                          <li key={idx} className="text-sm text-slate-300 italic">"{c}"</li>
-                        ))}
-                      </ul>
-                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         )}
